@@ -1,13 +1,27 @@
 function doPost(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet(); 
-    var sheet = ss.getSheets()[0]; 
     var data = JSON.parse(e.postData.contents);
     
     // 基本資料
     var shift = data.shift; // 'lunch' 或 'dinner'
     var dateStr = data.date || Utilities.formatDate(new Date(), "GMT+8", "yyyy/MM/dd");
     
+    // 根據日期自動產生/尋找月份工作表 (格式: 2026年6月)
+    var d = new Date(dateStr);
+    var sheetName = d.getFullYear() + "年" + (d.getMonth() + 1) + "月";
+    var sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) {
+      // 找不到就建立新的工作表
+      sheet = ss.insertSheet(sheetName);
+      // 自動補上表頭
+      var headers = ["日期", "昨日剩", "新增嫩", "今日用", "烤(午/晚)", "嫩雞結餘", "飯量(鍋)", "限定", "業績(午)", "業績(晚)", "支出(午/晚)", "匯款業績", "總業績", "差異值"];
+      sheet.appendRow(headers);
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#d9ead3");
+      sheet.setFrozenRows(1);
+    }
+
     // 取得目前工作表內的所有資料，用來尋找今天那一行
     var allValues = sheet.getDataRange().getValues();
 
