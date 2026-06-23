@@ -20,9 +20,15 @@ function doPost(e) {
         if (cellDate instanceof Date) {
           formatted = Utilities.formatDate(cellDate, "GMT+8", "yyyy/MM/dd");
         } else {
-          formatted = String(cellDate).trim();
+          var d = new Date(cellDate);
+          if (!isNaN(d.getTime())) {
+            formatted = Utilities.formatDate(d, "GMT+8", "yyyy/MM/dd");
+          } else {
+            formatted = String(cellDate).trim();
+          }
         }
-        if (formatted && formatted !== dateStr) { 
+        var inputDateStr = Utilities.formatDate(new Date(dateStr), "GMT+8", "yyyy/MM/dd");
+        if (formatted && formatted !== inputDateStr) {
           // 找到非今天的最新一筆 (也就是昨天)
           var prevRemain = Number(allValues[j][1]) || 0; // 昨日剩
           var prevAdded  = Number(allValues[j][2]) || 0; // 新增嫩
@@ -43,14 +49,21 @@ function doPost(e) {
     // 從最後一列往上找，找尋日期相符的列 (因為通常是新增在最下面)
     for (var i = allValues.length - 1; i >= 1; i--) { 
       var cellDate = allValues[i][0];
-      var formattedCellDate = "";
+      var cellDateStr = "";
       if (cellDate instanceof Date) {
-        formattedCellDate = Utilities.formatDate(cellDate, "GMT+8", "yyyy/MM/dd");
+        cellDateStr = Utilities.formatDate(cellDate, "GMT+8", "yyyy/MM/dd");
       } else {
-        formattedCellDate = String(cellDate).trim();
+        var d = new Date(cellDate);
+        if (!isNaN(d.getTime())) {
+          cellDateStr = Utilities.formatDate(d, "GMT+8", "yyyy/MM/dd");
+        } else {
+          cellDateStr = String(cellDate).trim();
+        }
       }
 
-      if (formattedCellDate === dateStr) {
+      var inputDateStr = Utilities.formatDate(new Date(dateStr), "GMT+8", "yyyy/MM/dd");
+
+      if (cellDateStr === inputDateStr) {
         targetRowIndex = i + 1; // Apps Script 的列號從 1 開始
         existingData = allValues[i];
         break;
