@@ -1,0 +1,34 @@
+name: LINE Daily Reminder
+
+on:
+  schedule:
+    # 每天台灣時間晚上 9:30 執行 (UTC 時間 13:30)
+    # Cron 格式: 分 時 日 月 星期 (GitHub Actions 使用 UTC 零時區，台灣時間需減 8 小時)
+    - cron: '30 13 * * *'
+  # 允許您在 GitHub 網頁上手動點擊按鈕來測試推播
+  workflow_dispatch: 
+
+jobs:
+  send-reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Push Message to LINE
+        env:
+          # 這裡會讀取我們稍後在 GitHub 設定的機密金鑰
+          LINE_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          # ⚠️ 請把這邊換成您真正的 LIFF 專屬網址
+          LIFF_URL: "https://liff.line.me/2010481539-ovIpcDDA"
+        run: |
+          curl -v -X POST https://api.line.me/v2/bot/message/push \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $LINE_TOKEN" \
+          -d '{
+            "to": "'"$LINE_USER_ID"'",
+            "messages": [
+              {
+                "type": "text",
+                "text": "店長辛苦了！記得點擊下方連結填寫今日營收報表喔 👇\n'"$LIFF_URL"'"
+              }
+            ]
+          }'
