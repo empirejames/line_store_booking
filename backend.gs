@@ -91,7 +91,7 @@ function doPost(e) {
 
       // 執行核心公式：預估業績與差異值
       var estimatedRevenue = (chickenUsed * 2 * 130) + (totalRoast * 140);
-      var difference = estimatedRevenue - totalRevenue;
+      var difference = totalRevenue - estimatedRevenue;
 
       existingData[7] = estimatedRevenue; // 預估業績
       existingData[13] = difference;      // 差異值
