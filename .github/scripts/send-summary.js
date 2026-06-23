@@ -37,36 +37,73 @@ async function run() {
       messages: [
         {
           type: "flex",
-          altText: "📊 本月營業額戰報",
+          altText: "📊 每日業績戰報",
           contents: {
             type: "bubble",
-            body: {
+            size: "mega",
+            header: {
               type: "box",
               layout: "vertical",
+              paddingAll: "20px",
+              paddingTop: "24px",
+              paddingBottom: "24px",
+              background: {
+                type: "linearGradient",
+                angle: "45deg",
+                startColor: "#1A2980",
+                endColor: "#26D0CE"
+              },
               contents: [
                 {
                   type: "text",
-                  text: "📊 本月營業額戰報",
+                  text: "📊 當月營業額戰報",
+                  color: "#ffffff",
+                  size: "xl",
                   weight: "bold",
-                  color: "#1DB446",
-                  size: "xl"
+                  align: "center"
                 },
                 {
                   type: "text",
                   text: result.month,
+                  color: "#ffffffcc",
                   size: "sm",
-                  color: "#aaaaaa",
-                  margin: "sm"
+                  align: "center",
+                  margin: "md"
+                }
+              ]
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              paddingAll: "24px",
+              contents: [
+                {
+                  type: "text",
+                  text: "🔥 目前每日平均業績",
+                  color: "#888888",
+                  size: "sm",
+                  weight: "bold",
+                  align: "center"
+                },
+                {
+                  type: "text",
+                  text: `$${result.average.toLocaleString()}`,
+                  size: "4xl",
+                  color: "#FF3B30",
+                  weight: "bold",
+                  align: "center",
+                  margin: "md"
                 },
                 {
                   type: "separator",
-                  margin: "xxl"
+                  margin: "xxl",
+                  color: "#eeeeee"
                 },
                 {
                   type: "box",
                   layout: "vertical",
                   margin: "xxl",
-                  spacing: "sm",
+                  spacing: "md",
                   contents: [
                     {
                       type: "box",
@@ -74,17 +111,17 @@ async function run() {
                       contents: [
                         {
                           type: "text",
-                          text: "累積總額",
+                          text: "累積營業總額",
                           size: "sm",
-                          color: "#555555",
-                          flex: 0
+                          color: "#555555"
                         },
                         {
                           type: "text",
                           text: `$${result.total.toLocaleString()}`,
                           size: "sm",
                           color: "#111111",
-                          align: "end"
+                          align: "end",
+                          weight: "bold"
                         }
                       ]
                     },
@@ -94,47 +131,36 @@ async function run() {
                       contents: [
                         {
                           type: "text",
-                          text: "營業天數",
+                          text: "已記錄天數",
                           size: "sm",
-                          color: "#555555",
-                          flex: 0
+                          color: "#555555"
                         },
                         {
                           type: "text",
                           text: `${result.days} 天`,
                           size: "sm",
                           color: "#111111",
-                          align: "end"
+                          align: "end",
+                          weight: "bold"
                         }
                       ]
                     }
                   ]
-                },
+                }
+              ]
+            },
+            footer: {
+              type: "box",
+              layout: "vertical",
+              paddingAll: "16px",
+              backgroundColor: "#fafafa",
+              contents: [
                 {
-                  type: "separator",
-                  margin: "xxl"
-                },
-                {
-                  type: "box",
-                  layout: "horizontal",
-                  margin: "md",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "🔥 每日平均",
-                      size: "md",
-                      color: "#ff5551",
-                      weight: "bold"
-                    },
-                    {
-                      type: "text",
-                      text: `$${result.average.toLocaleString()}`,
-                      size: "xl",
-                      color: "#ff5551",
-                      align: "end",
-                      weight: "bold"
-                    }
-                  ]
+                  type: "text",
+                  text: "LINE Bookkeeping System",
+                  color: "#cccccc",
+                  size: "xs",
+                  align: "center"
                 }
               ]
             }
