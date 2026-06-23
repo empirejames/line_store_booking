@@ -149,6 +149,36 @@
     // 啟動時先切換到午班
     switchTab('lunch');
 
+    // 🌟 新增邏輯：頁面載入時去後端要資料 (抓取昨日剩)
+    function fetchInitialData() {
+        if (GAS_URL.includes('請貼上_GAS_部署後的網址')) return; 
+        
+        const dateStr = document.getElementById('date').value.replace(/-/g, '/');
+        document.getElementById('yesterdayRemain').placeholder = "🔄 自動計算中...";
+
+        fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getInitData', date: dateStr })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.status === 'success' && result.yesterdayRemain !== "") {
+                document.getElementById('yesterdayRemain').value = result.yesterdayRemain;
+            }
+            document.getElementById('yesterdayRemain').placeholder = "數量";
+        })
+        .catch(err => {
+            console.error("Error fetching initial data:", err);
+            document.getElementById('yesterdayRemain').placeholder = "數量";
+        });
+    }
+    
+    // 執行初始化抓取
+    fetchInitialData();
+
+    // 監聽日期改變，如果使用者改了日期，重新抓一次
+    document.getElementById('date').addEventListener('change', fetchInitialData);
+
     function submitData() {
         if (!document.getElementById('reportForm').checkValidity()) {
             alert("請填寫所有的「必填」欄位喔！");

@@ -10,6 +10,33 @@ function doPost(e) {
     
     // 取得目前工作表內的所有資料，用來尋找今天那一行
     var allValues = sheet.getDataRange().getValues();
+
+    // 🌟 新增邏輯：如果是來拿初始資料的
+    if (data.action === 'getInitData') {
+      var yesterdayRemain = "";
+      for (var j = allValues.length - 1; j >= 1; j--) {
+        var cellDate = allValues[j][0];
+        var formatted = "";
+        if (cellDate instanceof Date) {
+          formatted = Utilities.formatDate(cellDate, "GMT+8", "yyyy/MM/dd");
+        } else {
+          formatted = String(cellDate).trim();
+        }
+        if (formatted && formatted !== dateStr) { 
+          // 找到非今天的最新一筆 (也就是昨天)
+          var prevRemain = Number(allValues[j][1]) || 0; // 昨日剩
+          var prevAdded  = Number(allValues[j][2]) || 0; // 新增嫩
+          var prevUsed   = Number(allValues[j][3]) || 0; // 今日用
+          yesterdayRemain = prevRemain + prevAdded - prevUsed;
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        yesterdayRemain: yesterdayRemain
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     var targetRowIndex = -1;
     var existingData = [];
 
