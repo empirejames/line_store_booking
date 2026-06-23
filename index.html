@@ -8,7 +8,19 @@
     <script>
         // 🌟 如果網址帶有 ?page=chart，自動跳轉至圖表頁面
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('page') === 'chart') {
+        let page = urlParams.get('page');
+        
+        // 處理 LINE LIFF v2 特殊的 liff.state 參數傳遞機制
+        if (!page && urlParams.has('liff.state')) {
+            // LINE 會把自訂參數編碼後放在 liff.state 中，例如: ?liff.state=%3Fpage%3Dchart
+            let stateStr = urlParams.get('liff.state');
+            // 有些時候它不是以 ? 開頭，安全起見補上
+            if (!stateStr.startsWith('?')) stateStr = '?' + stateStr;
+            const stateParams = new URLSearchParams(stateStr);
+            page = stateParams.get('page');
+        }
+
+        if (page === 'chart') {
             window.location.replace('chart.html' + window.location.search);
         }
     </script>
