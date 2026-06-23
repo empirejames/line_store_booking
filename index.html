@@ -227,7 +227,14 @@
             method: 'POST',
             body: JSON.stringify(data)
         })
-        .then(response => response.json())
+        .then(async response => {
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error("伺服器回傳了非 JSON 格式 (可能是權限設定錯誤或部署網址失效)。\n伺服器回應前 50 字：" + text.substring(0, 50));
+            }
+        })
         .then(result => {
             document.getElementById('loadingMsg').style.display = 'none';
             if (result.status === 'success') {
@@ -247,7 +254,7 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('發生錯誤，請稍後再試！');
+            alert('發生錯誤，請截圖給我看！\n詳細原因：' + error.message + '\n\n如果是 Failed to fetch，通常是因為 Google Apps Script 的「誰可以存取」跑掉了，請確保設定為「所有人」。');
             document.getElementById('loadingMsg').style.display = 'none';
             document.querySelector('.btn-submit').disabled = false;
         });
