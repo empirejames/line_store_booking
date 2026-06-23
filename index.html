@@ -180,8 +180,21 @@
     document.getElementById('date').addEventListener('change', fetchInitialData);
 
     function submitData() {
-        if (!document.getElementById('reportForm').checkValidity()) {
-            alert("請填寫所有的「必填」欄位喔！");
+        // 自訂驗證邏輯，明確抓出哪個沒填
+        let missing = [];
+        if (!document.getElementById('date').value) missing.push('結帳日期');
+
+        if (currentShift === 'lunch') {
+            if (!document.getElementById('revenueLunch').value) missing.push('業績 (午)');
+            if (!document.getElementById('roastLunch').value) missing.push('烤雞(午)數量');
+        } else {
+            if (!document.getElementById('revenueDinner').value) missing.push('業績 (晚)');
+            if (!document.getElementById('roastDinner').value) missing.push('烤雞(晚)數量');
+            if (!document.getElementById('chickenUsed').value) missing.push('嫩雞今日總用量 (算業績關鍵)');
+        }
+
+        if (missing.length > 0) {
+            alert("無法送出！您還有以下必填欄位未填寫：\n\n👉 " + missing.join("\n👉 "));
             return;
         }
 
