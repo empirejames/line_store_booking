@@ -207,10 +207,17 @@ function doGet(e) {
         var data = sheet.getDataRange().getValues();
         // 假設第一列是表頭，從第二列開始
         for (var i = 1; i < data.length; i++) {
+          var dateValue = new Date(data[i][0]); // 取得日期
+          var dayOfWeek = dateValue.getDay();   // 0=日, 1=一, 2=二, 3=三, 4=四, 5=五, 6=六
+          
           var dailyTotal = Number(data[i][12]); // 第13欄: 總業績
-          if (!isNaN(dailyTotal) && dailyTotal > 0) {
-            total += dailyTotal;
-            daysCount++;
+          
+          // 只統計週一(1) 到 週五(5)
+          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+            if (!isNaN(dailyTotal) && dailyTotal > 0) {
+              total += dailyTotal;
+              daysCount++;
+            }
           }
         }
         if (daysCount > 0) {

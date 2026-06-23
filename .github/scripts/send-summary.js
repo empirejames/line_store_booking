@@ -56,7 +56,7 @@ async function run() {
               contents: [
                 {
                   type: "text",
-                  text: "📊 當月營業額戰報",
+                  text: "📊 當月平日業績戰報",
                   color: "#ffffff",
                   size: "xl",
                   weight: "bold",
@@ -64,7 +64,7 @@ async function run() {
                 },
                 {
                   type: "text",
-                  text: result.month,
+                  text: `${result.month} (週一至週五)`,
                   color: "#ffffffcc",
                   size: "sm",
                   align: "center",
