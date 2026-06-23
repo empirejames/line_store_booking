@@ -16,7 +16,7 @@ function doPost(e) {
       // 找不到就建立新的工作表
       sheet = ss.insertSheet(sheetName);
       // 自動補上表頭
-      var headers = ["日期", "昨日剩", "新增嫩", "今日用", "烤(午/晚)", "嫩雞結餘", "飯量(鍋)", "限定", "業績(午)", "業績(晚)", "支出(午/晚)", "匯款業績", "總業績", "差異值"];
+      var headers = ["日期", "昨日剩", "新增嫩", "今日用", "烤(午/晚)", "限定(份)", "飯量(鍋)", "預估業績", "業績(午)", "業績(晚)", "支出(午/晚)", "匯款業績", "總業績", "差異值"];
       sheet.appendRow(headers);
       sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#d9ead3");
       sheet.setFrozenRows(1);
