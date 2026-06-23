@@ -184,3 +184,49 @@ function doOptions(e) {
   };
   return ContentService.createTextOutput("").setMimeType(ContentService.MimeType.JSON).setHeaders(headers);
 }
+
+// 🌟 新增 doGet 函式：供 GitHub Actions 讀取當月平均業績
+function doGet(e) {
+  try {
+    var action = e.parameter.action;
+    if (action === 'getAverage') {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var d = new Date();
+      // 在台灣時區執行，也可以使用 Utilities.formatDate(new Date(), "GMT+8", "yyyy年M月")，但這裡簡單計算即可
+      // 注意：GAS 時區預設可能不同，最好強制轉為 GMT+8
+      var formattedDate = Utilities.formatDate(new Date(), "GMT+8", "yyyy/M");
+      var parts = formattedDate.split('/');
+      var sheetName = parts[0] + "年" + parts[1] + "月";
+      var sheet = ss.getSheetByName(sheetName);
+      
+      var average = 0;
+      var total = 0;
+      var daysCount = 0;
+
+      if (sheet) {
+        var data = sheet.getDataRange().getValues();
+        // 假設第一列是表頭，從第二列開始
+        for (var i = 1; i < data.length; i++) {
+          var dailyTotal = Number(data[i][12]); // 第13欄: 總業績
+          if (!isNaN(dailyTotal) && dailyTotal > 0) {
+            total += dailyTotal;
+            daysCount++;
+          }
+        }
+        if (daysCount > 0) {
+          average = Math.round(total / daysCount);
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        month: sheetName,
+        total: total,
+        days: daysCount,
+        average: average
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({status: "error", message: error.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}

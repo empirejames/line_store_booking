@@ -1,0 +1,29 @@
+name: LINE Daily Summary
+
+on:
+  schedule:
+    # 每天台灣時間晚上 11:30 執行 (UTC 15:30)
+    - cron: '30 15 * * *'
+  # 允許您在 GitHub 網頁上手動點擊按鈕來測試推播
+  workflow_dispatch: 
+
+jobs:
+  send-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Send Flex Message to LINE
+        env:
+          # LINE API 金鑰 (沿用原本設定好的)
+          LINE_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          # 您的 GAS 部署網址 (這裡可以直接寫死，因為只有這個腳本會用)
+          GAS_URL: "https://script.google.com/macros/s/AKfycbxCqGQ2jc__cqcYtfHUI-2PBRZFoHWALGkvVW8RAzJaQ6V2K3lJfIMMfZbi5TBVWfVM/exec"
+        run: node .github/scripts/send-summary.js
