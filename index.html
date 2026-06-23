@@ -8,11 +8,17 @@
     <style>
         body { font-family: 'Arial', sans-serif; background-color: #f4f5f7; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        h1 { text-align: center; color: #00B900; margin-bottom: 20px; font-size: 24px; }
+        h1 { text-align: center; color: #00B900; margin-bottom: 15px; font-size: 22px; }
+        
+        /* 漂亮的切換按鈕 (Segmented Control) */
+        .tabs { display: flex; background: #e0e0e0; border-radius: 10px; margin-bottom: 25px; overflow: hidden; padding: 4px; }
+        .tab { flex: 1; text-align: center; padding: 12px; font-weight: bold; font-size: 16px; color: #666; cursor: pointer; border-radius: 8px; transition: 0.3s; }
+        .tab.active { background: white; color: #00B900; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #555; }
         input[type="number"], input[type="date"], input[type="text"] { 
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; 
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #fff;
         }
         .section-title { margin-top: 25px; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; color: #444; font-size: 18px; }
         .btn-submit { 
@@ -20,8 +26,11 @@
             border-radius: 8px; cursor: pointer; margin-top: 20px; transition: background-color 0.3s;
         }
         .btn-submit:active { background-color: #009900; }
-        .loading { display: none; text-align: center; margin-top: 10px; color: #666; }
+        .loading { display: none; text-align: center; margin-top: 10px; color: #666; font-weight: bold; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        /* 動態隱藏區塊的 Class */
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -29,82 +38,123 @@
 <div class="container">
     <h1>📝 每日營收回報</h1>
     
+    <!-- 班別切換區 -->
+    <div class="tabs">
+        <div class="tab active" id="tabLunch" onclick="switchTab('lunch')">☀️ 午班結帳</div>
+        <div class="tab" id="tabDinner" onclick="switchTab('dinner')">🌙 晚班 (全日總結)</div>
+    </div>
+    
     <form id="reportForm">
         <div class="form-group">
-            <label for="date">日期</label>
+            <label for="date">結帳日期</label>
             <input type="date" id="date" required>
         </div>
 
-        <div class="section-title">📦 庫存與備料</div>
-        <div class="grid-2">
-            <div class="form-group">
-                <label for="yesterdayRemain">昨日剩</label>
-                <input type="number" id="yesterdayRemain" placeholder="數量">
-            </div>
-            <div class="form-group">
-                <label for="addedTender">新增嫩</label>
-                <input type="number" id="addedTender" placeholder="數量">
-            </div>
-        </div>
-        
-        <div class="grid-2">
-            <div class="form-group">
-                <label for="chickenUsed">今日用 (嫩雞)</label>
-                <input type="number" id="chickenUsed" placeholder="例如：10" required>
-            </div>
-            <div class="form-group">
-                <label for="roastCount">烤(午/晚)</label>
-                <input type="number" id="roastCount" placeholder="例如：5" required>
-            </div>
-        </div>
-
-        <div class="grid-2">
-            <div class="form-group">
-                <label for="limited">限定</label>
-                <input type="number" id="limited" placeholder="數量">
-            </div>
-            <div class="form-group">
-                <label for="riceAmount">飯量(鍋)</label>
-                <input type="number" id="riceAmount" placeholder="數量">
-            </div>
-        </div>
-
-        <div class="section-title">💰 營業額 (業績)</div>
-        <div class="grid-2">
+        <!-- 區塊：午餐專屬 -->
+        <div id="lunchSection">
+            <div class="section-title">☀️ 午餐時段</div>
             <div class="form-group">
                 <label for="revenueLunch">業績 (午)</label>
-                <input type="number" id="revenueLunch" placeholder="午餐業績" required>
+                <input type="number" id="revenueLunch" placeholder="輸入午餐營業額" class="req-lunch">
             </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="roastLunch">烤雞(午)數量</label>
+                    <input type="number" id="roastLunch" placeholder="數量" class="req-lunch">
+                </div>
+                <div class="form-group">
+                    <label for="expensesLunch">支出(午)</label>
+                    <input type="number" id="expensesLunch" placeholder="無則免填">
+                </div>
+            </div>
+        </div>
+
+        <!-- 區塊：晚餐與全日總結 (預設隱藏) -->
+        <div id="dinnerSection" class="hidden">
+            <div class="section-title">🌙 晚餐時段</div>
             <div class="form-group">
                 <label for="revenueDinner">業績 (晚)</label>
-                <input type="number" id="revenueDinner" placeholder="晚餐業績" required>
+                <input type="number" id="revenueDinner" placeholder="輸入晚餐營業額" class="req-dinner">
             </div>
-        </div>
-        
-        <div class="section-title">📝 帳款與其他</div>
-        <div class="form-group">
-            <label for="expenses">支出(午/晚)</label>
-            <input type="number" id="expenses" placeholder="今日總支出">
-        </div>
-        <div class="form-group">
-            <label for="remittance">匯款業績</label>
-            <input type="number" id="remittance" placeholder="匯款總額">
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="roastDinner">烤雞(晚)數量</label>
+                    <input type="number" id="roastDinner" placeholder="數量" class="req-dinner">
+                </div>
+                <div class="form-group">
+                    <label for="expensesDinner">支出(晚)</label>
+                    <input type="number" id="expensesDinner" placeholder="無則免填">
+                </div>
+            </div>
+
+            <div class="section-title">📦 全日庫存盤點 (總結)</div>
+            <div class="form-group">
+                <label for="chickenUsed" style="color:#d9534f;">嫩雞今日總用量 (算業績關鍵)</label>
+                <input type="number" id="chickenUsed" placeholder="例如：10" class="req-dinner">
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="yesterdayRemain">昨日剩(嫩雞)</label>
+                    <input type="number" id="yesterdayRemain" placeholder="數量">
+                </div>
+                <div class="form-group">
+                    <label for="addedTender">新增嫩</label>
+                    <input type="number" id="addedTender" placeholder="數量">
+                </div>
+            </div>
+
+            <div class="section-title">📝 其他全日項目</div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="limited">限定</label>
+                    <input type="number" id="limited" placeholder="數量">
+                </div>
+                <div class="form-group">
+                    <label for="riceAmount">今日飯量(鍋)</label>
+                    <input type="number" id="riceAmount" placeholder="數量">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="remittance">匯款業績總和</label>
+                <input type="number" id="remittance" placeholder="匯款總額">
+            </div>
         </div>
 
         <button type="button" class="btn-submit" onclick="submitData()">🚀 送出報表</button>
-        <div class="loading" id="loadingMsg">資料傳送中，請稍候...</div>
+        <div class="loading" id="loadingMsg">資料傳送與雲端計算中，請稍候...</div>
     </form>
 </div>
 
 <script>
+    // 預設填入今日日期
     document.getElementById('date').valueAsDate = new Date();
+    
+    // ⚠️ 替換成您的 Google Apps Script Web App URL (這串不用換，如果您沒改版的話)
+    const GAS_URL = '請貼上_GAS_部署後的網址'; 
+    let currentShift = 'lunch'; // 預設午班
 
-    // ⚠️ 替換成您的 Google Apps Script Web App URL
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCqGQ2jc__cqcYtfHUI-2PBRZFoHWALGkvVW8RAzJaQ6V2K3lJfIMMfZbi5TBVWfVM/exec'; 
+    // 處理頁籤切換
+    function switchTab(shift) {
+        currentShift = shift;
+        // 更新 Tab 按鈕顏色
+        document.getElementById('tabLunch').classList.toggle('active', shift === 'lunch');
+        document.getElementById('tabDinner').classList.toggle('active', shift === 'dinner');
+        
+        // 隱藏/顯示區塊
+        document.getElementById('lunchSection').classList.toggle('hidden', shift !== 'lunch');
+        document.getElementById('dinnerSection').classList.toggle('hidden', shift !== 'dinner');
+
+        // 動態設定哪些欄位是「必填」(這樣使用者沒填就會被瀏覽器擋下來)
+        document.querySelectorAll('.req-lunch').forEach(el => el.required = (shift === 'lunch'));
+        document.querySelectorAll('.req-dinner').forEach(el => el.required = (shift === 'dinner'));
+    }
+
+    // 啟動時先切換到午班
+    switchTab('lunch');
 
     function submitData() {
         if (!document.getElementById('reportForm').checkValidity()) {
-            alert("請填寫所有必填欄位！");
+            alert("請填寫所有的「必填」欄位喔！");
             return;
         }
 
@@ -112,16 +162,25 @@
         document.querySelector('.btn-submit').disabled = true;
 
         const data = {
+            shift: currentShift,
             date: document.getElementById('date').value.replace(/-/g, '/'),
+            
+            // 午班欄位
+            revenueLunch: document.getElementById('revenueLunch').value,
+            roastLunch: document.getElementById('roastLunch').value,
+            expensesLunch: document.getElementById('expensesLunch').value,
+            
+            // 晚班欄位
+            revenueDinner: document.getElementById('revenueDinner').value,
+            roastDinner: document.getElementById('roastDinner').value,
+            expensesDinner: document.getElementById('expensesDinner').value,
+            
+            // 盤點欄位
+            chickenUsed: document.getElementById('chickenUsed').value,
             yesterdayRemain: document.getElementById('yesterdayRemain').value,
             addedTender: document.getElementById('addedTender').value,
-            chickenUsed: document.getElementById('chickenUsed').value,
-            roastCount: document.getElementById('roastCount').value,
             limited: document.getElementById('limited').value,
             riceAmount: document.getElementById('riceAmount').value,
-            revenueLunch: document.getElementById('revenueLunch').value,
-            revenueDinner: document.getElementById('revenueDinner').value,
-            expenses: document.getElementById('expenses').value,
             remittance: document.getElementById('remittance').value
         };
 
@@ -133,7 +192,7 @@
         .then(result => {
             document.getElementById('loadingMsg').style.display = 'none';
             if (result.status === 'success') {
-                alert(`✅ 送出成功！\n${result.summary}`);
+                alert(`✅ ${currentShift === 'lunch' ? '午班' : '晚班(全日)'} 報表送出成功！\n\n${result.summary}`);
                 
                 if (typeof liff !== 'undefined' && liff.isInClient()) {
                     liff.closeWindow();
@@ -149,7 +208,7 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('發生錯誤，請稍後再試！ (若是 CORS 錯誤，代表 GAS 網址尚未填妥或權限未設為所有人)');
+            alert('發生錯誤，請稍後再試！');
             document.getElementById('loadingMsg').style.display = 'none';
             document.querySelector('.btn-submit').disabled = false;
         });
