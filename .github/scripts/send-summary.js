@@ -156,11 +156,23 @@ async function run() {
               backgroundColor: "#fafafa",
               contents: [
                 {
+                  type: "button",
+                  style: "primary",
+                  color: "#00B900",
+                  height: "sm",
+                  action: {
+                    type: "uri",
+                    label: "📈 查看詳細營收圖表",
+                    uri: "https://liff.line.me/2010481539-ovIpcDDA?page=chart"
+                  }
+                },
+                {
                   type: "text",
                   text: "LINE Bookkeeping System",
                   color: "#cccccc",
                   size: "xs",
-                  align: "center"
+                  align: "center",
+                  margin: "md"
                 }
               ]
             }

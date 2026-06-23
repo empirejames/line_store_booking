@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>每日營收回報</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+        // 🌟 如果網址帶有 ?page=chart，自動跳轉至圖表頁面
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('page') === 'chart') {
+            window.location.replace('chart.html' + window.location.search);
+        }
+    </script>
     <style>
         body { font-family: 'Arial', sans-serif; background-color: #f4f5f7; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }

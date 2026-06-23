@@ -202,6 +202,8 @@ function doGet(e) {
       var average = 0;
       var total = 0;
       var daysCount = 0;
+      var chartLabels = [];
+      var chartData = [];
 
       if (sheet) {
         var data = sheet.getDataRange().getValues();
@@ -212,7 +214,14 @@ function doGet(e) {
           
           var dailyTotal = Number(data[i][12]); // 第13欄: 總業績
           
-          // 只統計週一(1) 到 週五(5)
+          // 圖表資料：每天都加入（包含假日，看整體趨勢）
+          if (!isNaN(dailyTotal) && dailyTotal > 0) {
+             var dayStr = (dateValue.getMonth() + 1) + "/" + dateValue.getDate();
+             chartLabels.push(dayStr);
+             chartData.push(dailyTotal);
+          }
+          
+          // 平均業績：只統計週一(1) 到 週五(5)
           if (dayOfWeek >= 1 && dayOfWeek <= 5) {
             if (!isNaN(dailyTotal) && dailyTotal > 0) {
               total += dailyTotal;
@@ -230,7 +239,9 @@ function doGet(e) {
         month: sheetName,
         total: total,
         days: daysCount,
-        average: average
+        average: average,
+        chartLabels: chartLabels,
+        chartData: chartData
       })).setMimeType(ContentService.MimeType.JSON);
     }
   } catch (error) {

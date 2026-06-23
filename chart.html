@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>營收走勢圖</title>
+    <!-- 引入 Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Arial', sans-serif; background-color: #f4f5f7; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h1 { text-align: center; color: #00B900; margin-bottom: 5px; font-size: 22px; }
+        p.subtitle { text-align: center; color: #666; margin-top: 0; margin-bottom: 20px; font-size: 14px; }
+        
+        .chart-container { position: relative; height: 60vh; width: 100%; }
+        
+        .loading { text-align: center; color: #888; font-weight: bold; margin-top: 50px; }
+        .error { color: #d9534f; text-align: center; font-weight: bold; margin-top: 20px; display: none; }
+        
+        .btn-back {
+            display: block; width: 100%; background-color: #e0e0e0; color: #333; text-align: center; text-decoration: none;
+            padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; margin-top: 25px; transition: 0.3s; box-sizing: border-box;
+        }
+        .btn-back:active { background-color: #ccc; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 id="monthTitle">📈 營收走勢圖</h1>
+    <p class="subtitle">本月全天候業績趨勢</p>
+    
+    <div id="loadingMsg" class="loading">資料載入中，請稍候...</div>
+    <div id="errorMsg" class="error">資料讀取失敗，請稍後再試。</div>
+    
+    <div class="chart-container" id="chartWrapper" style="display: none;">
+        <canvas id="revenueChart"></canvas>
+    </div>
+    
+    <a href="index.html" class="btn-back">🔙 返回填表頁面</a>
+</div>
+
+<script>
+    // ⚠️ 請確保此網址與 index.html 中的 GAS_URL 一致
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCqGQ2jc__cqcYtfHUI-2PBRZFoHWALGkvVW8RAzJaQ6V2K3lJfIMMfZbi5TBVWfVM/exec';
+
+    // 從網址讀取參數 (如果是從 Flex Message 點過來的)
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    function fetchChartData() {
+        document.getElementById('loadingMsg').style.display = 'block';
+        document.getElementById('errorMsg').style.display = 'none';
+        
+        // 使用與每日戰報一樣的 getAverage API，因為裡面已經加入了 chartLabels 與 chartData
+        fetch(GAS_URL + '?action=getAverage')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loadingMsg').style.display = 'none';
+                
+                if (data.status === 'success') {
+                    document.getElementById('monthTitle').innerText = '📈 ' + data.month + ' 走勢圖';
+                    document.getElementById('chartWrapper').style.display = 'block';
+                    renderChart(data.chartLabels, data.chartData);
+                } else {
+                    showError();
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching data:", error);
+                document.getElementById('loadingMsg').style.display = 'none';
+                showError();
+            });
+    }
+
+    function showError() {
+        document.getElementById('errorMsg').style.display = 'block';
+    }
+
+    function renderChart(labels, dataPoints) {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        
+        // 建立漸層背景色
+        let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(0, 185, 0, 0.4)'); // 頂部半透明綠色
+        gradient.addColorStop(1, 'rgba(0, 185, 0, 0.0)'); // 底部全透明
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '每日總業績',
+                    data: dataPoints,
+                    borderColor: '#00B900', // LINE 綠色
+                    backgroundColor: gradient,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#00B900',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true, // 填滿下方區域
+                    tension: 0.3 // 讓線條帶有圓滑曲線
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false // 隱藏圖例，因為只有一條線
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 14, weight: 'bold' },
+                        callbacks: {
+                            label: function(context) {
+                                let value = context.parsed.y;
+                                return '業績: $' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false } // 隱藏 X 軸網格線，畫面更乾淨
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#eee',
+                            borderDash: [5, 5] // 虛線網格
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                // 加上 K (千) 來縮短數字長度
+                                if (value >= 1000) {
+                                    return (value / 1000) + 'k';
+                                }
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 網頁載入後馬上抓資料
+    fetchChartData();
+</script>
+
+</body>
+</html>
