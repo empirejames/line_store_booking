@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>每日營收回報</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: 'Arial', sans-serif; background-color: #f4f5f7; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h1 { text-align: center; color: #00B900; margin-bottom: 20px; font-size: 24px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #555; }
+        input[type="number"], input[type="date"], input[type="text"] { 
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; 
+        }
+        .section-title { margin-top: 25px; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; color: #444; font-size: 18px; }
+        .btn-submit { 
+            width: 100%; background-color: #00B900; color: white; border: none; padding: 15px; font-size: 18px; font-weight: bold; 
+            border-radius: 8px; cursor: pointer; margin-top: 20px; transition: background-color 0.3s;
+        }
+        .btn-submit:active { background-color: #009900; }
+        .loading { display: none; text-align: center; margin-top: 10px; color: #666; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📝 每日營收回報</h1>
+    
+    <form id="reportForm">
+        <div class="form-group">
+            <label for="date">日期</label>
+            <input type="date" id="date" required>
+        </div>
+
+        <div class="section-title">📦 庫存與備料</div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="yesterdayRemain">昨日剩</label>
+                <input type="number" id="yesterdayRemain" placeholder="數量">
+            </div>
+            <div class="form-group">
+                <label for="addedTender">新增嫩</label>
+                <input type="number" id="addedTender" placeholder="數量">
+            </div>
+        </div>
+        
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="chickenUsed">今日用 (嫩雞)</label>
+                <input type="number" id="chickenUsed" placeholder="例如：10" required>
+            </div>
+            <div class="form-group">
+                <label for="roastCount">烤(午/晚)</label>
+                <input type="number" id="roastCount" placeholder="例如：5" required>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="limited">限定</label>
+                <input type="number" id="limited" placeholder="數量">
+            </div>
+            <div class="form-group">
+                <label for="riceAmount">飯量(鍋)</label>
+                <input type="number" id="riceAmount" placeholder="數量">
+            </div>
+        </div>
+
+        <div class="section-title">💰 營業額 (業績)</div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="revenueLunch">業績 (午)</label>
+                <input type="number" id="revenueLunch" placeholder="午餐業績" required>
+            </div>
+            <div class="form-group">
+                <label for="revenueDinner">業績 (晚)</label>
+                <input type="number" id="revenueDinner" placeholder="晚餐業績" required>
+            </div>
+        </div>
+        
+        <div class="section-title">📝 帳款與其他</div>
+        <div class="form-group">
+            <label for="expenses">支出(午/晚)</label>
+            <input type="number" id="expenses" placeholder="今日總支出">
+        </div>
+        <div class="form-group">
+            <label for="remittance">匯款業績</label>
+            <input type="number" id="remittance" placeholder="匯款總額">
+        </div>
+
+        <button type="button" class="btn-submit" onclick="submitData()">🚀 送出報表</button>
+        <div class="loading" id="loadingMsg">資料傳送中，請稍候...</div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('date').valueAsDate = new Date();
+
+    // ⚠️ 替換成您的 Google Apps Script Web App URL
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCqGQ2jc__cqcYtfHUI-2PBRZFoHWALGkvVW8RAzJaQ6V2K3lJfIMMfZbi5TBVWfVM/exec'; 
+
+    function submitData() {
+        if (!document.getElementById('reportForm').checkValidity()) {
+            alert("請填寫所有必填欄位！");
+            return;
+        }
+
+        document.getElementById('loadingMsg').style.display = 'block';
+        document.querySelector('.btn-submit').disabled = true;
+
+        const data = {
+            date: document.getElementById('date').value.replace(/-/g, '/'),
+            yesterdayRemain: document.getElementById('yesterdayRemain').value,
+            addedTender: document.getElementById('addedTender').value,
+            chickenUsed: document.getElementById('chickenUsed').value,
+            roastCount: document.getElementById('roastCount').value,
+            limited: document.getElementById('limited').value,
+            riceAmount: document.getElementById('riceAmount').value,
+            revenueLunch: document.getElementById('revenueLunch').value,
+            revenueDinner: document.getElementById('revenueDinner').value,
+            expenses: document.getElementById('expenses').value,
+            remittance: document.getElementById('remittance').value
+        };
+
+        fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            document.getElementById('loadingMsg').style.display = 'none';
+            if (result.status === 'success') {
+                alert(`✅ 送出成功！\n${result.summary}`);
+                
+                if (typeof liff !== 'undefined' && liff.isInClient()) {
+                    liff.closeWindow();
+                } else {
+                    document.getElementById('reportForm').reset();
+                    document.getElementById('date').valueAsDate = new Date();
+                    document.querySelector('.btn-submit').disabled = false;
+                }
+            } else {
+                alert('寫入失敗：' + result.message);
+                document.querySelector('.btn-submit').disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('發生錯誤，請稍後再試！ (若是 CORS 錯誤，代表 GAS 網址尚未填妥或權限未設為所有人)');
+            document.getElementById('loadingMsg').style.display = 'none';
+            document.querySelector('.btn-submit').disabled = false;
+        });
+    }
+</script>
+
+</body>
+</html>
