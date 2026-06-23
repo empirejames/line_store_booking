@@ -2,9 +2,10 @@ name: LINE Daily Reminder
 
 on:
   schedule:
-    # 每天台灣時間晚上 9:30 執行 (UTC 時間 13:30)
-    # Cron 格式: 分 時 日 月 星期 (GitHub Actions 使用 UTC 零時區，台灣時間需減 8 小時)
-    - cron: '30 13 * * *'
+    # 每天台灣時間下午 2:00 執行 (UTC 06:00)
+    - cron: '0 6 * * *'
+    # 每天台灣時間晚上 7:30 執行 (UTC 11:30)
+    - cron: '30 11 * * *'
   # 允許您在 GitHub 網頁上手動點擊按鈕來測試推播
   workflow_dispatch: 
 
