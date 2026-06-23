@@ -75,15 +75,18 @@ function doPost(e) {
       existingData[3] = chickenUsed;                             // 今日用(嫩雞)
       existingData[5] = parseNum(data.limited) || "";            // 限定
       existingData[6] = parseNum(data.riceAmount) || "";         // 飯量(鍋)
-      existingData[11] = parseNum(data.remittance) || "";        // 匯款業績
 
       // 🔄 加總共用欄位 (午 + 晚)
       var totalRoast = currentRoastLunch + roastDinner;
       var totalExpenses = currentExpLunch + expDinner;
       var totalRevenue = currentRevLunch + revDinner;
 
+      // 💰 自動計算匯款業績 (總業績 - 支出)
+      var remittance = totalRevenue - totalExpenses;
+
       existingData[4] = totalRoast;     // 烤(午/晚)
       existingData[10] = totalExpenses; // 支出(午/晚)
+      existingData[11] = remittance;    // 匯款業績 (自動計算)
       existingData[12] = totalRevenue;  // 總業績
 
       // 執行核心公式：預估業績與差異值

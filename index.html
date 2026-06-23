@@ -98,7 +98,7 @@
                     <input type="number" id="yesterdayRemain" placeholder="數量">
                 </div>
                 <div class="form-group">
-                    <label for="addedTender">新增嫩</label>
+                    <label for="addedTender">新增嫩雞</label>
                     <input type="number" id="addedTender" placeholder="數量">
                 </div>
             </div>
@@ -114,10 +114,7 @@
                     <input type="number" id="riceAmount" placeholder="數量">
                 </div>
             </div>
-            <div class="form-group">
-                <label for="remittance">匯款業績總和</label>
-                <input type="number" id="remittance" placeholder="匯款總額">
-            </div>
+
         </div>
 
         <button type="button" class="btn-submit" onclick="submitData()">🚀 送出報表</button>
@@ -180,8 +177,7 @@
             yesterdayRemain: document.getElementById('yesterdayRemain').value,
             addedTender: document.getElementById('addedTender').value,
             limited: document.getElementById('limited').value,
-            riceAmount: document.getElementById('riceAmount').value,
-            remittance: document.getElementById('remittance').value
+            riceAmount: document.getElementById('riceAmount').value
         };
 
         fetch(GAS_URL, {
