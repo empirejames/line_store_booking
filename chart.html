@@ -22,6 +22,11 @@
             padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; margin-top: 25px; transition: 0.3s; box-sizing: border-box;
         }
         .btn-back:active { background-color: #ccc; }
+        
+        /* 切換按鈕 (Segmented Control) */
+        .tabs { display: flex; background: #e0e0e0; border-radius: 10px; margin-bottom: 15px; overflow: hidden; padding: 4px; }
+        .tab { flex: 1; text-align: center; padding: 10px; font-weight: bold; font-size: 15px; color: #666; cursor: pointer; border-radius: 8px; transition: 0.3s; }
+        .tab.active { background: white; color: #00B900; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -36,6 +41,19 @@
         <script>
         !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
         </script>
+    </div>
+    
+    <!-- 檢視切換區 -->
+    <div class="tabs" id="viewTabs" style="display: none;">
+        <div class="tab active" id="tabMonth" onclick="switchView('month')">📅 當月全景</div>
+        <div class="tab" id="tabWeek" onclick="switchView('week')">📆 單週檢視</div>
+    </div>
+    
+    <!-- 週次選擇器 (預設隱藏) -->
+    <div id="weekSelector" style="display: none; margin-bottom: 20px;">
+        <select id="weekDropdown" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; background: #fff;" onchange="updateChart()">
+            <!-- JS 動態產生 -->
+        </select>
     </div>
     
     <div id="loadingMsg" class="loading">資料載入中，請稍候...</div>
@@ -55,11 +73,17 @@
     // 從網址讀取參數 (如果是從 Flex Message 點過來的)
     const urlParams = new URLSearchParams(window.location.search);
     
+    // 全域變數儲存資料與狀態
+    let fullLabels = [];
+    let fullData = [];
+    let currentView = 'month'; // 'month' 或 'week'
+    let weeksData = [];
+    let chartInstance = null;
+
     function fetchChartData() {
         document.getElementById('loadingMsg').style.display = 'block';
         document.getElementById('errorMsg').style.display = 'none';
         
-        // 使用與每日戰報一樣的 getAverage API，因為裡面已經加入了 chartLabels 與 chartData
         fetch(GAS_URL + '?action=getAverage')
             .then(response => response.json())
             .then(data => {
@@ -67,8 +91,50 @@
                 
                 if (data.status === 'success') {
                     document.getElementById('monthTitle').innerText = '📈 ' + data.month + ' 走勢圖';
+                    
+                    fullLabels = data.chartLabels || [];
+                    fullData = data.chartData || [];
+                    
+                    // 解析週次資料：每 7 天為一週
+                    weeksData = [];
+                    for (let i = 0; i < fullLabels.length; i += 7) {
+                        let chunkLabels = fullLabels.slice(i, i + 7);
+                        let chunkData = fullData.slice(i, i + 7);
+                        let weekNum = Math.floor(i / 7) + 1;
+                        let startDay = i + 1;
+                        let endDay = Math.min(i + 7, fullLabels.length); // 粗略估算日期(假設每天都有資料)
+                        
+                        // 嘗試從標籤中提取實際日期字串
+                        let startLabel = chunkLabels[0].split('(')[0];
+                        let endLabel = chunkLabels[chunkLabels.length - 1].split('(')[0];
+                        
+                        weeksData.push({
+                            label: `第 ${weekNum} 週 (${startLabel} ~ ${endLabel})`,
+                            labels: chunkLabels,
+                            data: chunkData
+                        });
+                    }
+
+                    // 建立下拉選單選項
+                    let dropdown = document.getElementById('weekDropdown');
+                    dropdown.innerHTML = '';
+                    weeksData.forEach((w, index) => {
+                        let opt = document.createElement('option');
+                        opt.value = index;
+                        opt.innerText = w.label;
+                        dropdown.appendChild(opt);
+                    });
+
+                    // 預設選最後一週
+                    if (weeksData.length > 0) {
+                        dropdown.value = weeksData.length - 1;
+                    }
+
+                    // 顯示 UI
+                    document.getElementById('viewTabs').style.display = 'flex';
                     document.getElementById('chartWrapper').style.display = 'block';
-                    renderChart(data.chartLabels, data.chartData);
+                    
+                    updateChart();
                 } else {
                     showError();
                 }
@@ -84,22 +150,50 @@
         document.getElementById('errorMsg').style.display = 'block';
     }
 
+    function switchView(view) {
+        currentView = view;
+        document.getElementById('tabMonth').classList.toggle('active', view === 'month');
+        document.getElementById('tabWeek').classList.toggle('active', view === 'week');
+        document.getElementById('weekSelector').style.display = (view === 'week') ? 'block' : 'none';
+        updateChart();
+    }
+
+    function updateChart() {
+        let labelsToRender = fullLabels;
+        let dataToRender = fullData;
+
+        if (currentView === 'week') {
+            let weekIndex = document.getElementById('weekDropdown').value;
+            if (weeksData[weekIndex]) {
+                labelsToRender = weeksData[weekIndex].labels;
+                dataToRender = weeksData[weekIndex].data;
+            }
+        }
+
+        renderChart(labelsToRender, dataToRender);
+    }
+
     function renderChart(labels, dataPoints) {
         const ctx = document.getElementById('revenueChart').getContext('2d');
         
+        // 如果已經有圖表實體，先銷毀它以免重疊
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
         // 建立漸層背景色
         let gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(0, 185, 0, 0.4)'); // 頂部半透明綠色
-        gradient.addColorStop(1, 'rgba(0, 185, 0, 0.0)'); // 底部全透明
+        gradient.addColorStop(0, 'rgba(0, 185, 0, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 185, 0, 0.0)');
 
-        new Chart(ctx, {
+        chartInstance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
                     label: '每日總業績',
                     data: dataPoints,
-                    borderColor: '#00B900', // LINE 綠色
+                    borderColor: '#00B900',
                     backgroundColor: gradient,
                     borderWidth: 3,
                     pointBackgroundColor: '#fff',
@@ -107,17 +201,15 @@
                     pointBorderWidth: 2,
                     pointRadius: 4,
                     pointHoverRadius: 6,
-                    fill: true, // 填滿下方區域
-                    tension: 0.3 // 讓線條帶有圓滑曲線
+                    fill: true,
+                    tension: 0.3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false // 隱藏圖例，因為只有一條線
-                    },
+                    legend: { display: false },
                     tooltip: {
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         titleFont: { size: 14 },
@@ -131,21 +223,13 @@
                     }
                 },
                 scales: {
-                    x: {
-                        grid: { display: false } // 隱藏 X 軸網格線，畫面更乾淨
-                    },
+                    x: { grid: { display: false } },
                     y: {
                         beginAtZero: true,
-                        grid: {
-                            color: '#eee',
-                            borderDash: [5, 5] // 虛線網格
-                        },
+                        grid: { color: '#eee', borderDash: [5, 5] },
                         ticks: {
                             callback: function(value) {
-                                // 加上 K (千) 來縮短數字長度
-                                if (value >= 1000) {
-                                    return (value / 1000) + 'k';
-                                }
+                                if (value >= 1000) return (value / 1000) + 'k';
                                 return value;
                             }
                         }
