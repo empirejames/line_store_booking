@@ -2,8 +2,8 @@ name: LINE Daily Summary
 
 on:
   schedule:
-    # 每天台灣時間晚上 9:30 執行 (UTC 13:30)
-    - cron: '30 13 * * *'
+    # 每天台灣時間晚上 9:00 執行 (UTC 13:00)
+    - cron: '0 13 * * *'
   # 允許您在 GitHub 網頁上手動點擊按鈕來測試推播
   workflow_dispatch: 
 
