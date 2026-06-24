@@ -217,7 +217,7 @@ function doGet(e) {
           var dateValue = new Date(data[i][0]); // 取得日期
           var dayOfWeek = dateValue.getDay();   // 0=日, 1=一, 2=二, 3=三, 4=四, 5=五, 6=六
           
-          var dailyTotal = Number(data[i][12]); // 第13欄: 總業績
+          var dailyTotal = Number(data[i][16]); // 第17欄: 總業績 (index 16)
           
           // 圖表資料：每天都加入（包含假日，看整體趨勢）
           if (!isNaN(dailyTotal) && dailyTotal > 0) {
