@@ -95,23 +95,45 @@
                     fullLabels = data.chartLabels || [];
                     fullData = data.chartData || [];
                     
-                    // 解析週次資料：每 7 天為一週
+                    // 解析週次資料：以星期一為起始，並只收錄一到六的資料
                     weeksData = [];
-                    for (let i = 0; i < fullLabels.length; i += 7) {
-                        let chunkLabels = fullLabels.slice(i, i + 7);
-                        let chunkData = fullData.slice(i, i + 7);
-                        let weekNum = Math.floor(i / 7) + 1;
-                        let startDay = i + 1;
-                        let endDay = Math.min(i + 7, fullLabels.length); // 粗略估算日期(假設每天都有資料)
+                    let currentWeekLabels = [];
+                    let currentWeekData = [];
+                    let weekNum = 1;
+
+                    for (let i = 0; i < fullLabels.length; i++) {
+                        let label = fullLabels[i];
+                        let dataPoint = fullData[i];
                         
-                        // 嘗試從標籤中提取實際日期字串
-                        let startLabel = chunkLabels[0].split('(')[0];
-                        let endLabel = chunkLabels[chunkLabels.length - 1].split('(')[0];
+                        // 當遇到星期一時，且目前已有累積資料，代表上一週結束，開啟新週次
+                        if (label.includes('(一)') && currentWeekLabels.length > 0) {
+                            let startLabel = currentWeekLabels[0].split('(')[0];
+                            let endLabel = currentWeekLabels[currentWeekLabels.length - 1].split('(')[0];
+                            weeksData.push({
+                                label: `第 ${weekNum} 週 (${startLabel} ~ ${endLabel})`,
+                                labels: currentWeekLabels,
+                                data: currentWeekData
+                            });
+                            currentWeekLabels = [];
+                            currentWeekData = [];
+                            weekNum++;
+                        }
                         
+                        // 只要不是星期日，就加入週次統計中 (一到六)
+                        if (!label.includes('(日)')) {
+                            currentWeekLabels.push(label);
+                            currentWeekData.push(dataPoint);
+                        }
+                    }
+                    
+                    // 處理最後一週殘餘的資料
+                    if (currentWeekLabels.length > 0) {
+                        let startLabel = currentWeekLabels[0].split('(')[0];
+                        let endLabel = currentWeekLabels[currentWeekLabels.length - 1].split('(')[0];
                         weeksData.push({
                             label: `第 ${weekNum} 週 (${startLabel} ~ ${endLabel})`,
-                            labels: chunkLabels,
-                            data: chunkData
+                            labels: currentWeekLabels,
+                            data: currentWeekData
                         });
                     }
 
