@@ -84,9 +84,9 @@ function doPost(e) {
       }
     }
 
-    // 若找不到今日資料，預設一個長度為 14 的空陣列
+    // 若找不到今日資料，預設一個長度為 18 的空陣列
     if (targetRowIndex === -1) {
-      existingData = new Array(14).fill(""); 
+      existingData = new Array(18).fill(""); 
       existingData[0] = dateStr;
     }
 
@@ -98,59 +98,64 @@ function doPost(e) {
     if (shift === 'lunch') {
       // ==== 午班結帳邏輯 ====
       var revLunch = parseNum(data.revenueLunch);
+      var tenderLunch = parseNum(data.tenderLunch);
       var roastLunch = parseNum(data.roastLunch);
       var expLunch = parseNum(data.expensesLunch);
       
-      existingData[8] = revLunch;    // 第 9 欄: 業績(午)
-      existingData[4] = roastLunch;  // 第 5 欄: 烤(午/晚) -> 暫存午餐數量
-      existingData[10] = expLunch;   // 第 11 欄: 支出(午/晚) -> 暫存午餐數量
+      var estRevLunch = (tenderLunch * 2 * 130) + (roastLunch * 140);
+      var diffLunch = revLunch - estRevLunch;
+
+      existingData[4] = tenderLunch;   // 嫩(午)
+      existingData[6] = roastLunch;    // 烤(午)
+      existingData[10] = estRevLunch;  // 預估業績(午)
+      existingData[11] = revLunch;     // 業績(午)
+      existingData[12] = diffLunch;    // 差異值(午)
+      existingData[14] = expLunch;     // 支出(午/晚) -> 暫存午餐支出
+      existingData[16] = revLunch;     // 總業績 -> 暫存午餐業績
       
-      // 午班尚未算完總業績，暫時以午班業績當作總業績
-      existingData[12] = revLunch;   // 第 13 欄: 總業績
-      
-      summaryMsg = "午餐業績已記錄：$" + revLunch;
+      summaryMsg = "午餐結算完成！\n預估: $" + estRevLunch + "\n實際: $" + revLunch + "\n差異: $" + diffLunch;
 
     } else if (shift === 'dinner') {
       // ==== 晚班結帳邏輯 ====
       var revDinner = parseNum(data.revenueDinner);
       var roastDinner = parseNum(data.roastDinner);
+      var tenderDinner = parseNum(data.tenderDinner);
       var expDinner = parseNum(data.expensesDinner);
       
-      // 讀取已經存在的「午班」資料來加總
-      var currentRoastLunch = parseNum(existingData[4]);
-      var currentExpLunch = parseNum(existingData[10]);
-      var currentRevLunch = parseNum(existingData[8]); 
+      // 讀取已經存在的「午班」資料來加總與計算
+      var tenderLunch = parseNum(existingData[4]);
+      var roastLunch = parseNum(existingData[6]);
+      var expLunch = parseNum(existingData[14]);
+      var revLunch = parseNum(existingData[11]); 
 
-      // 更新盤點與獨立欄位
-      existingData[9] = revDinner;                               // 業績(晚)
-      existingData[1] = parseNum(data.yesterdayRemain) || "";    // 昨日剩
-      existingData[2] = parseNum(data.addedTender) || "";        // 新增嫩
-      var chickenUsed = parseNum(data.chickenUsed);
-      existingData[3] = chickenUsed;                             // 今日用(嫩雞)
-      existingData[5] = parseNum(data.limited) || "";            // 限定
-      existingData[6] = parseNum(data.riceAmount) || "";         // 飯量(鍋)
-
-      // 🔄 加總共用欄位 (午 + 晚)
-      var totalRoast = currentRoastLunch + roastDinner;
-      var totalExpenses = currentExpLunch + expDinner;
-      var totalRevenue = currentRevLunch + revDinner;
-
-      // 💰 自動計算匯款業績 (總業績 - 支出)
+      var totalTenderUsed = tenderLunch + tenderDinner;
+      var totalRoast = roastLunch + roastDinner;
+      var totalExpenses = expLunch + expDinner;
+      var totalRevenue = revLunch + revDinner;
       var remittance = totalRevenue - totalExpenses;
 
-      existingData[4] = totalRoast;     // 烤(午/晚)
-      existingData[10] = totalExpenses; // 支出(午/晚)
-      existingData[11] = remittance;    // 匯款業績 (自動計算)
-      existingData[12] = totalRevenue;  // 總業績
+      // 更新獨立欄位
+      existingData[1] = parseNum(data.yesterdayRemain) || "";    // 昨日剩
+      existingData[2] = parseNum(data.addedTender) || "";        // 新增嫩
+      existingData[3] = totalTenderUsed;                         // 今日用(午+晚)
+      existingData[5] = tenderDinner;                            // 嫩雞(晚)
+      existingData[7] = roastDinner;                             // 烤(晚)
+      existingData[8] = parseNum(data.limited) || "";            // 限定
+      existingData[9] = parseNum(data.riceAmount) || "";         // 飯量(鍋)
+      existingData[13] = revDinner;                              // 業績(晚)
+      
+      // 🔄 更新共用加總欄位
+      existingData[14] = totalExpenses; // 支出(午/晚)
+      existingData[15] = remittance;    // 匯款業績
+      existingData[16] = totalRevenue;  // 總業績
 
-      // 執行核心公式：預估業績與差異值
-      var estimatedRevenue = (chickenUsed * 2 * 130) + (totalRoast * 140);
-      var difference = totalRevenue - estimatedRevenue;
+      // 全日預估業績與差異值
+      var estimatedRevenueTotal = (totalTenderUsed * 2 * 130) + (totalRoast * 140);
+      var differenceTotal = totalRevenue - estimatedRevenueTotal;
 
-      existingData[7] = estimatedRevenue; // 預估業績
-      existingData[13] = difference;      // 差異值
+      existingData[17] = differenceTotal; // 差異值 (全日)
 
-      summaryMsg = "全日結算完成！\n預估業績: $" + estimatedRevenue + "\n實際總業績: $" + totalRevenue + "\n差異值: $" + difference;
+      summaryMsg = "全日結算完成！\n總業績: $" + totalRevenue + "\n全日差異: $" + differenceTotal + "\n午班差異: $" + parseNum(existingData[12]);
     }
 
     // 寫回 Google Sheets

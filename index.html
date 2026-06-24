@@ -78,13 +78,17 @@
             </div>
             <div class="grid-2">
                 <div class="form-group">
+                    <label for="tenderLunch">嫩雞(午)用量</label>
+                    <input type="number" step="any" id="tenderLunch" placeholder="數量" class="req-lunch">
+                </div>
+                <div class="form-group">
                     <label for="roastLunch">烤雞(午)數量</label>
                     <input type="number" step="any" id="roastLunch" placeholder="數量" class="req-lunch">
                 </div>
-                <div class="form-group">
-                    <label for="expensesLunch">支出(午)</label>
-                    <input type="number" step="any" id="expensesLunch" placeholder="無則免填">
-                </div>
+            </div>
+            <div class="form-group">
+                <label for="expensesLunch">支出(午)</label>
+                <input type="number" step="any" id="expensesLunch" placeholder="無則免填">
             </div>
         </div>
 
@@ -108,8 +112,8 @@
 
             <div class="section-title">📦 全日庫存盤點 (總結)</div>
             <div class="form-group">
-                <label for="chickenUsed" style="color:#d9534f;">嫩雞今日總用量 (算業績關鍵)</label>
-                <input type="number" step="any" id="chickenUsed" placeholder="例如：10" class="req-dinner">
+                <label for="tenderDinner" style="color:#d9534f;">嫩雞(晚)用量</label>
+                <input type="number" step="any" id="tenderDinner" placeholder="數量" class="req-dinner">
             </div>
             <div class="grid-2">
                 <div class="form-group">
@@ -205,11 +209,12 @@
 
         if (currentShift === 'lunch') {
             if (!document.getElementById('revenueLunch').value) missing.push('業績 (午)');
+            if (!document.getElementById('tenderLunch').value) missing.push('嫩雞(午)用量');
             if (!document.getElementById('roastLunch').value) missing.push('烤雞(午)數量');
         } else {
             if (!document.getElementById('revenueDinner').value) missing.push('業績 (晚)');
             if (!document.getElementById('roastDinner').value) missing.push('烤雞(晚)數量');
-            if (!document.getElementById('chickenUsed').value) missing.push('嫩雞今日總用量 (算業績關鍵)');
+            if (!document.getElementById('tenderDinner').value) missing.push('嫩雞(晚)用量');
         }
 
         if (missing.length > 0) {
@@ -226,16 +231,17 @@
             
             // 午班欄位
             revenueLunch: document.getElementById('revenueLunch').value,
+            tenderLunch: document.getElementById('tenderLunch').value,
             roastLunch: document.getElementById('roastLunch').value,
             expensesLunch: document.getElementById('expensesLunch').value,
             
             // 晚班欄位
             revenueDinner: document.getElementById('revenueDinner').value,
             roastDinner: document.getElementById('roastDinner').value,
+            tenderDinner: document.getElementById('tenderDinner').value,
             expensesDinner: document.getElementById('expensesDinner').value,
             
             // 盤點欄位
-            chickenUsed: document.getElementById('chickenUsed').value,
             yesterdayRemain: document.getElementById('yesterdayRemain').value,
             addedTender: document.getElementById('addedTender').value,
             limited: document.getElementById('limited').value,
