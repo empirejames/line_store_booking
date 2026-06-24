@@ -21,11 +21,10 @@ jobs:
           # ⚠️ 請把這邊換成您真正的 LIFF 專屬網址
           LIFF_URL: "https://liff.line.me/2010481539-ovIpcDDA"
         run: |
-          curl -v -X POST https://api.line.me/v2/bot/message/push \
+          curl -v -X POST https://api.line.me/v2/bot/message/broadcast \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer $LINE_TOKEN" \
           -d '{
-            "to": "'"$LINE_USER_ID"'",
             "messages": [
               {
                 "type": "text",

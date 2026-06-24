@@ -33,7 +33,6 @@ async function run() {
 
     // 2. 建立精美的 Flex Message 結構
     const flexMessage = {
-      to: LINE_USER_ID,
       messages: [
         {
           type: "flex",
@@ -184,7 +183,7 @@ async function run() {
     console.log("Sending Flex Message to LINE...");
 
     // 3. 發送至 LINE
-    const lineRes = await fetch('https://api.line.me/v2/bot/message/push', {
+    const lineRes = await fetch('https://api.line.me/v2/bot/message/broadcast', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
