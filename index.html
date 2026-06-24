@@ -50,9 +50,60 @@
         
         /* 動態隱藏區塊的 Class */
         .hidden { display: none !important; }
+
+        /* 全螢幕 Loading 遮罩與進度條 */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #00B900;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text {
+            color: #00B900;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .progress-container {
+            width: 80%;
+            max-width: 300px;
+            background-color: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 12px;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #00B900;
+            transition: width 0.3s;
+        }
     </style>
 </head>
 <body>
+
+<!-- 滿版 Loading 遮罩 -->
+<div class="overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">資料傳送與雲端計算中...</div>
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+</div>
 
 <div class="container">
     <h1>📝 每日營收回報</h1>
@@ -222,8 +273,17 @@
             return;
         }
 
-        document.getElementById('loadingMsg').style.display = 'block';
+        // 顯示全螢幕 Loading 遮罩與進度條動畫
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        document.getElementById('progressBar').style.width = '0%';
         document.querySelector('.btn-submit').disabled = true;
+
+        let progress = 0;
+        window.progressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90; // 在收到回應前最多跑到 90%
+            document.getElementById('progressBar').style.width = progress + '%';
+        }, 300);
 
         const data = {
             shift: currentShift,
@@ -261,26 +321,34 @@
             }
         })
         .then(result => {
-            document.getElementById('loadingMsg').style.display = 'none';
-            if (result.status === 'success') {
-                alert(`✅ ${currentShift === 'lunch' ? '午班' : '晚班(全日)'} 報表送出成功！\n\n${result.summary}`);
+            // 完成動畫
+            clearInterval(window.progressInterval);
+            document.getElementById('progressBar').style.width = '100%';
+            
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
                 
-                if (typeof liff !== 'undefined' && liff.isInClient()) {
-                    liff.closeWindow();
+                if (result.status === 'success') {
+                    alert(`✅ ${currentShift === 'lunch' ? '午班' : '晚班(全日)'} 報表送出成功！\n\n${result.summary}`);
+                    
+                    if (typeof liff !== 'undefined' && liff.isInClient()) {
+                        liff.closeWindow();
+                    } else {
+                        document.getElementById('reportForm').reset();
+                        document.getElementById('date').valueAsDate = new Date();
+                        document.querySelector('.btn-submit').disabled = false;
+                    }
                 } else {
-                    document.getElementById('reportForm').reset();
-                    document.getElementById('date').valueAsDate = new Date();
+                    alert('寫入失敗：' + result.message);
                     document.querySelector('.btn-submit').disabled = false;
                 }
-            } else {
-                alert('寫入失敗：' + result.message);
-                document.querySelector('.btn-submit').disabled = false;
-            }
+            }, 400); // 延遲 400ms 讓使用者看到進度條跑滿 100%
         })
         .catch(error => {
+            clearInterval(window.progressInterval);
             console.error('Error:', error);
             alert('發生錯誤，請截圖給我看！\n詳細原因：' + error.message + '\n\n如果是 Failed to fetch，通常是因為 Google Apps Script 的「誰可以存取」跑掉了，請確保設定為「所有人」。');
-            document.getElementById('loadingMsg').style.display = 'none';
+            document.getElementById('loadingOverlay').style.display = 'none';
             document.querySelector('.btn-submit').disabled = false;
         });
     }
