@@ -169,7 +169,7 @@
     }
 
     function fetchWeatherData() {
-        const url = "https://api.open-meteo.com/v1/forecast?latitude=25.0478&longitude=121.5319&daily=weather_code&past_days=31&forecast_days=1&timezone=Asia%2FTaipei";
+        const url = "https://api.open-meteo.com/v1/forecast?latitude=25.0605&longitude=121.4552&daily=weather_code&past_days=31&forecast_days=1&timezone=Asia%2FTaipei";
         fetch(url)
             .then(res => res.json())
             .then(weatherData => {
