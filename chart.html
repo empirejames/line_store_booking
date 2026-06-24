@@ -30,6 +30,14 @@
     <h1 id="monthTitle">📈 營收走勢圖</h1>
     <p class="subtitle">本月全天候業績趨勢</p>
     
+    <!-- 天氣預報小工具 -->
+    <div style="margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <a class="weatherwidget-io" href="https://forecast7.com/zh-tw/25d03121d56/taipei-city/" data-label_1="台北市" data-label_2="天氣預報" data-theme="pure" >台北市 天氣預報</a>
+        <script>
+        !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');
+        </script>
+    </div>
+    
     <div id="loadingMsg" class="loading">資料載入中，請稍候...</div>
     <div id="errorMsg" class="error">資料讀取失敗，請稍後再試。</div>
     

@@ -216,7 +216,8 @@ function doGet(e) {
           
           // 圖表資料：每天都加入（包含假日，看整體趨勢）
           if (!isNaN(dailyTotal) && dailyTotal > 0) {
-             var dayStr = (dateValue.getMonth() + 1) + "/" + dateValue.getDate();
+             var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+             var dayStr = (dateValue.getMonth() + 1) + "/" + dateValue.getDate() + "(" + weekdays[dayOfWeek] + ")";
              chartLabels.push(dayStr);
              chartData.push(dailyTotal);
           }
