@@ -84,9 +84,9 @@ function doPost(e) {
       }
     }
 
-    // 若找不到今日資料，預設一個長度為 18 的空陣列
+    // 若找不到今日資料，預設一個長度為 19 的空陣列 (新增備註欄)
     if (targetRowIndex === -1) {
-      existingData = new Array(18).fill(""); 
+      existingData = new Array(19).fill(""); 
       existingData[0] = dateStr;
     }
 
@@ -156,6 +156,21 @@ function doPost(e) {
       existingData[17] = differenceTotal; // 差異值 (全日)
 
       summaryMsg = "全日結算完成！\n總業績: $" + totalRevenue + "\n全日差異: $" + differenceTotal + "\n午班差異: $" + parseNum(existingData[12]);
+    }
+
+    // 處理備註欄位 (如果有填寫的話)
+    if (data.notes && data.notes.trim() !== "") {
+      var shiftName = shift === 'lunch' ? "[午班]" : "[晚班]";
+      var newNote = shiftName + " " + data.notes.trim();
+      if (existingData[18] && existingData[18].trim() !== "") {
+        // 若已經有備註，則換行附加
+        // 避免重複寫入同一班的相同備註 (簡單防呆)
+        if (!existingData[18].includes(newNote)) {
+            existingData[18] = existingData[18] + "\n" + newNote;
+        }
+      } else {
+        existingData[18] = newNote;
+      }
     }
 
     // 寫回 Google Sheets

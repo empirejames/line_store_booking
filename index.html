@@ -189,6 +189,12 @@
                 </div>
             </div>
 
+            <!-- 共用區塊：備註 -->
+            <div class="section-title">📝 結帳備註</div>
+            <div class="form-group">
+                <textarea id="notes" rows="3" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:16px; box-sizing:border-box; background:#fff; font-family:inherit; resize:vertical;" placeholder="可輸入找錯錢、購買雜物等特殊狀況說明..."></textarea>
+            </div>
+
         </div>
 
         <button type="button" class="btn-submit" onclick="submitData()">🚀 送出報表</button>
@@ -305,7 +311,10 @@
             yesterdayRemain: document.getElementById('yesterdayRemain').value,
             addedTender: document.getElementById('addedTender').value,
             limited: document.getElementById('limited').value,
-            riceAmount: document.getElementById('riceAmount').value
+            riceAmount: document.getElementById('riceAmount').value,
+            
+            // 備註欄位
+            notes: document.getElementById('notes').value
         };
 
         fetch(GAS_URL, {
