@@ -209,6 +209,10 @@ function doGet(e) {
       var daysCount = 0;
       var chartLabels = [];
       var chartData = [];
+      
+      var todayDateStr = "今日";
+      var todayLunchDiff = 0;
+      var todayTotalDiff = 0;
 
       if (sheet) {
         var data = sheet.getDataRange().getValues();
@@ -238,6 +242,19 @@ function doGet(e) {
         if (daysCount > 0) {
           average = Math.round(total / daysCount);
         }
+        
+        // 取得最後一天 (通常為今日) 的差異值
+        if (data.length > 1) {
+            var lastRow = data[data.length - 1];
+            var lastDate = new Date(lastRow[0]);
+            var mm = lastDate.getMonth() + 1;
+            var dd = lastDate.getDate();
+            var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+            todayDateStr = mm + "/" + dd + "(" + weekdays[lastDate.getDay()] + ")";
+            
+            todayLunchDiff = Number(lastRow[12]) || 0;
+            todayTotalDiff = Number(lastRow[17]) || 0;
+        }
       }
 
       return ContentService.createTextOutput(JSON.stringify({
@@ -247,7 +264,10 @@ function doGet(e) {
         days: daysCount,
         average: average,
         chartLabels: chartLabels,
-        chartData: chartData
+        chartData: chartData,
+        todayDateStr: todayDateStr,
+        todayLunchDiff: todayLunchDiff,
+        todayTotalDiff: todayTotalDiff
       })).setMimeType(ContentService.MimeType.JSON);
     }
   } catch (error) {
