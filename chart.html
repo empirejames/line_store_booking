@@ -6,6 +6,7 @@
     <title>營收走勢圖</title>
     <!-- 引入 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
         body { font-family: 'Arial', sans-serif; background-color: #f4f5f7; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
@@ -78,6 +79,9 @@
 </div>
 
 <script>
+    // 註冊 DataLabels 外掛
+    Chart.register(ChartDataLabels);
+
     // ⚠️ 請確保此網址與 index.html 中的 GAS_URL 一致
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCqGQ2jc__cqcYtfHUI-2PBRZFoHWALGkvVW8RAzJaQ6V2K3lJfIMMfZbi5TBVWfVM/exec';
 
@@ -273,10 +277,31 @@
             dataToRender = filteredData;
         }
 
-        // 2. 移除月份顯示
-        labelsToRender = labelsToRender.map(label => label.replace(/^\d+\//, ''));
+        // 2. 移除月份顯示，並分離出日期 (X軸) 與 星期/天氣 (資料點標籤)
+        let xLabels = [];
+        let pointLabels = [];
+        
+        labelsToRender.forEach((label, index) => {
+            // 原本的 label 可能是 "6/27(六) ☀️"
+            // 我們把月份拿掉變成 "27(六) ☀️"
+            let noMonthLabel = label.replace(/^\d+\//, '');
+            
+            // 用正則表達式拆分：日期 (例如 27) 與 其他部分 (例如 (六) ☀️)
+            let match = noMonthLabel.match(/^(\d+)(\(.+\).*)$/);
+            if (match) {
+                xLabels.push(match[1]); // "27"
+                // 組合：星期 + 天氣 + 換行 + 業績
+                // datalabels 支援陣列作為多行文字
+                let revenueStr = '$' + (dataToRender[index] >= 1000 ? (dataToRender[index] / 1000) + 'k' : dataToRender[index]);
+                pointLabels.push([match[2].trim(), revenueStr]);
+            } else {
+                xLabels.push(noMonthLabel);
+                let revenueStr = '$' + (dataToRender[index] >= 1000 ? (dataToRender[index] / 1000) + 'k' : dataToRender[index]);
+                pointLabels.push(['', revenueStr]);
+            }
+        });
 
-        renderChart(labelsToRender, dataToRender);
+        renderChart(xLabels, dataToRender, pointLabels);
     }
 
     // =============================================
@@ -373,6 +398,7 @@
                             pointStyle: 'line'
                         }
                     },
+                    datalabels: { display: false },
                     tooltip: {
                         backgroundColor: 'rgba(0,0,0,0.8)',
                         titleFont: { size: 14 },
@@ -407,7 +433,7 @@
         });
     }
 
-    function renderChart(labels, dataPoints) {
+    function renderChart(labels, dataPoints, pointLabels) {
         // 動態計算圖表寬度：每個資料點至少 55px，確保手機上不擠
         const chartInner = document.getElementById('chartInner');
         const wrapperWidth = document.getElementById('chartWrapper').clientWidth;
@@ -429,9 +455,9 @@
         // 找出數據的最大與最小值，來做精美的上下留白
         let minVal = Math.min(...dataPoints);
         let maxVal = Math.max(...dataPoints);
-        let padding = (maxVal - minVal) * 0.15 || maxVal * 0.1; // 如果全平，給個預設 padding
+        let padding = (maxVal - minVal) * 0.2 || maxVal * 0.15; // 如果全平，給個預設 padding
         let suggestedMin = Math.max(0, minVal - padding);
-        let suggestedMax = maxVal + padding;
+        let suggestedMax = maxVal + padding * 1.5; // 上方留多一點空間給兩行文字標籤
 
         chartInstance = new Chart(ctx, {
             type: 'line',
@@ -457,6 +483,27 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
+                    datalabels: {
+                        display: function(context) {
+                            // 四週對比時，或沒有提供 pointLabels 時不顯示
+                            return pointLabels ? true : false;
+                        },
+                        align: 'top',
+                        anchor: 'end',
+                        offset: 4,
+                        font: { size: 12, weight: 'bold' },
+                        color: '#00B900',
+                        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                        borderRadius: 4,
+                        padding: 4,
+                        formatter: function(value, context) {
+                            if (pointLabels && pointLabels[context.dataIndex]) {
+                                return pointLabels[context.dataIndex];
+                            }
+                            return value;
+                        },
+                        textAlign: 'center'
+                    },
                     tooltip: {
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         titleFont: { size: 14 },
