@@ -13,6 +13,7 @@
         h1 { text-align: center; color: #00B900; margin-bottom: 5px; font-size: 22px; }
         p.subtitle { text-align: center; color: #666; margin-top: 0; margin-bottom: 20px; font-size: 14px; }
         
+        .chart-scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
         .chart-container { position: relative; height: 55vh; min-height: 300px; width: 100%; }
         
         .loading { text-align: center; color: #888; font-weight: bold; margin-top: 50px; }
@@ -68,8 +69,10 @@
     <div id="loadingMsg" class="loading">資料載入中，請稍候...</div>
     <div id="errorMsg" class="error">資料讀取失敗，請稍後再試。</div>
     
-    <div class="chart-container" id="chartWrapper" style="display: none;">
-        <canvas id="revenueChart"></canvas>
+    <div class="chart-scroll-wrapper" id="chartWrapper" style="display: none;">
+        <div class="chart-container" id="chartInner">
+            <canvas id="revenueChart"></canvas>
+        </div>
     </div>
     
     <a href="index.html" class="btn-back">🔙 返回填表頁面</a>
@@ -428,6 +431,16 @@
     }
 
     function renderChart(labels, dataPoints, pointLabels) {
+        // 只有「當月」檢視才啟用捲動（每個資料點給 55px），單週則滿版
+        const chartInner = document.getElementById('chartInner');
+        if (currentView === 'month') {
+            const wrapperWidth = document.getElementById('chartWrapper').clientWidth;
+            const minWidth = labels.length * 55;
+            chartInner.style.width = (minWidth > wrapperWidth ? minWidth : wrapperWidth) + 'px';
+        } else {
+            chartInner.style.width = '100%';
+        }
+
         const ctx = document.getElementById('revenueChart').getContext('2d');
         
         // 如果已經有圖表實體，先銷毀它以免重疊
@@ -473,8 +486,8 @@
                     legend: { display: false },
                     datalabels: {
                         display: function(context) {
-                            // 四週對比時不顯示；其他模式下自動隱藏重疊的標籤
-                            return pointLabels ? 'auto' : false;
+                            // 四週對比時不顯示；當月與單週因為有足夠空間，直接顯示
+                            return pointLabels ? true : false;
                         },
                         align: 'top',
                         anchor: 'end',
@@ -511,7 +524,8 @@
                             maxRotation: 0,
                             minRotation: 0,
                             font: { size: 12, weight: 'bold' },
-                            autoSkip: true,
+                            // 當月有捲動空間，不需要 autoSkip
+                            autoSkip: currentView === 'month' ? false : true,
                             maxTicksLimit: 15
                         }
                     },
