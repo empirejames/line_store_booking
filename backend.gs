@@ -500,3 +500,30 @@ function replyToLine(replyToken, message) {
     muteHttpExceptions: true
   });
 }
+
+// =============================================
+// 🧪 測試函式：在 Apps Script 編輯器直接執行
+// 用來驗證 Token 是否正確、能否發送訊息
+// =============================================
+function testBot() {
+  var url = "https://api.line.me/v2/bot/message/broadcast";
+  var payload = {
+    messages: [{
+      type: "text",
+      text: "🤖 測試成功！您的虛擬會計機器人已經上線了！\n\n試試輸入以下指令：\n📌 今日業績\n📌 本月總額\n📌 指令"
+    }]
+  };
+  
+  var response = UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    headers: {
+      "Authorization": "Bearer " + LINE_CHANNEL_ACCESS_TOKEN
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  
+  Logger.log("HTTP Status: " + response.getResponseCode());
+  Logger.log("Response: " + response.getContentText());
+}
