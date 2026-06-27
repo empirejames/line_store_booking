@@ -1,7 +1,24 @@
+// ========================================
+// 🤖 LINE 對話機器人設定
+// 請將您的 LINE Channel Access Token 貼在下方引號內
+// ========================================
+var LINE_CHANNEL_ACCESS_TOKEN = '請貼上您的_LINE_CHANNEL_ACCESS_TOKEN';
+
 function doPost(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet(); 
     var data = JSON.parse(e.postData.contents);
+    
+    // =============================================
+    // 🤖 LINE Webhook 攔截器：判斷是否為 LINE 對話事件
+    // =============================================
+    if (data.events) {
+      return handleLineWebhook(data);
+    }
+    
+    // =============================================
+    // 📝 以下為原本的 LIFF 填單邏輯
+    // =============================================
     
     // 基本資料
     var shift = data.shift; // 'lunch' 或 'dinner'
@@ -291,4 +308,195 @@ function doGet(e) {
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({status: "error", message: error.toString()})).setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+// =============================================
+// 🤖 LINE 對話機器人：Webhook 處理函式
+// =============================================
+
+function handleLineWebhook(data) {
+  var events = data.events;
+  
+  for (var i = 0; i < events.length; i++) {
+    var event = events[i];
+    
+    // 只處理文字訊息
+    if (event.type !== 'message' || event.message.type !== 'text') continue;
+    
+    var userText = event.message.text.trim();
+    var replyToken = event.replyToken;
+    var replyMsg = "";
+    
+    // 🔍 關鍵字辨識
+    if (userText === "今日業績" || userText === "今日") {
+      replyMsg = getTodayReport();
+    } else if (userText === "本月總額" || userText === "本月") {
+      replyMsg = getMonthReport();
+    } else if (userText === "指令" || userText === "功能" || userText === "help") {
+      replyMsg = "🤖 虛擬會計指令清單：\n\n"
+        + "📌 「今日業績」— 查看今天的營收與差異值\n"
+        + "📌 「本月總額」— 查看本月累積營收與日均業績\n"
+        + "📌 「指令」— 顯示此說明";
+    }
+    
+    // 如果有匹配到指令，就回覆
+    if (replyMsg !== "") {
+      replyToLine(replyToken, replyMsg);
+    }
+  }
+  
+  // LINE Webhook 必須回傳 200 OK
+  return ContentService.createTextOutput(JSON.stringify({status: "ok"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// =============================================
+// 📊 查詢「今日業績」
+// =============================================
+function getTodayReport() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var now = new Date();
+    var formattedDate = Utilities.formatDate(now, "GMT+8", "yyyy/M");
+    var parts = formattedDate.split('/');
+    var sheetName = parts[0] + "年" + parts[1] + "月";
+    var sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) return "⚠️ 找不到本月工作表「" + sheetName + "」，可能今天尚未填過任何資料。";
+    
+    var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return "⚠️ 本月工作表目前還沒有任何資料。";
+    
+    // 取最後一筆資料（通常為今天或最近一天）
+    var lastRow = data[data.length - 1];
+    var lastDate = new Date(lastRow[0]);
+    var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+    var mm = lastDate.getMonth() + 1;
+    var dd = lastDate.getDate();
+    var dayName = weekdays[lastDate.getDay()];
+    
+    var revLunch    = Number(lastRow[11]) || 0;  // 業績(午)
+    var revDinner   = Number(lastRow[13]) || 0;  // 業績(晚)
+    var totalRev    = Number(lastRow[16]) || 0;  // 總業績
+    var diffLunch   = Number(lastRow[12]) || 0;  // 差異值(午)
+    var diffTotal   = Number(lastRow[17]) || 0;  // 差異值
+    var expenses    = Number(lastRow[14]) || 0;  // 支出
+    var remittance  = Number(lastRow[15]) || 0;  // 匯款業績
+    var notes       = lastRow[18] || "";         // 備註
+    
+    var msg = "📊 " + mm + "/" + dd + "(" + dayName + ") 即時戰報\n"
+      + "━━━━━━━━━━━━\n"
+      + "🌤️ 午班業績：$" + revLunch.toLocaleString() + "\n"
+      + "🌙 晚班業績：$" + revDinner.toLocaleString() + "\n"
+      + "💰 全日總額：$" + totalRev.toLocaleString() + "\n"
+      + "━━━━━━━━━━━━\n"
+      + "📈 午班差異：$" + diffLunch.toLocaleString() + "\n"
+      + "📈 全日差異：$" + diffTotal.toLocaleString() + "\n"
+      + "💸 總支出：$" + expenses.toLocaleString() + "\n"
+      + "🏦 匯款業績：$" + remittance.toLocaleString();
+    
+    if (notes) {
+      msg += "\n━━━━━━━━━━━━\n📝 備註：" + notes;
+    }
+    
+    return msg;
+    
+  } catch (err) {
+    return "❌ 查詢失敗：" + err.toString();
+  }
+}
+
+// =============================================
+// 📊 查詢「本月總額」
+// =============================================
+function getMonthReport() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var now = new Date();
+    var formattedDate = Utilities.formatDate(now, "GMT+8", "yyyy/M");
+    var parts = formattedDate.split('/');
+    var sheetName = parts[0] + "年" + parts[1] + "月";
+    var sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) return "⚠️ 找不到本月工作表「" + sheetName + "」。";
+    
+    var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return "⚠️ 本月工作表目前還沒有任何資料。";
+    
+    var totalRevenue = 0;
+    var totalExpenses = 0;
+    var totalDiffLunch = 0;
+    var totalDiffAll = 0;
+    var daysCount = 0;
+    var bestDay = "";
+    var bestDayRev = 0;
+    
+    for (var i = 1; i < data.length; i++) {
+      var dailyTotal = Number(data[i][16]) || 0;
+      var dailyExp   = Number(data[i][14]) || 0;
+      var dailyDiffL = Number(data[i][12]) || 0;
+      var dailyDiffA = Number(data[i][17]) || 0;
+      
+      if (dailyTotal > 0) {
+        totalRevenue += dailyTotal;
+        totalExpenses += dailyExp;
+        totalDiffLunch += dailyDiffL;
+        totalDiffAll += dailyDiffA;
+        daysCount++;
+        
+        if (dailyTotal > bestDayRev) {
+          bestDayRev = dailyTotal;
+          var bd = new Date(data[i][0]);
+          var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+          bestDay = (bd.getMonth() + 1) + "/" + bd.getDate() + "(" + weekdays[bd.getDay()] + ")";
+        }
+      }
+    }
+    
+    var average = daysCount > 0 ? Math.round(totalRevenue / daysCount) : 0;
+    var netRevenue = totalRevenue - totalExpenses;
+    
+    var msg = "📊 " + sheetName + " 月報總覽\n"
+      + "━━━━━━━━━━━━\n"
+      + "💰 累積總營收：$" + totalRevenue.toLocaleString() + "\n"
+      + "💸 累積總支出：$" + totalExpenses.toLocaleString() + "\n"
+      + "🏦 淨營收：$" + netRevenue.toLocaleString() + "\n"
+      + "━━━━━━━━━━━━\n"
+      + "📅 已營業天數：" + daysCount + " 天\n"
+      + "📈 日均業績：$" + average.toLocaleString() + "\n"
+      + "━━━━━━━━━━━━\n"
+      + "📊 累計午班差異：$" + totalDiffLunch.toLocaleString() + "\n"
+      + "📊 累計全日差異：$" + totalDiffAll.toLocaleString() + "\n"
+      + "━━━━━━━━━━━━\n"
+      + "🏆 最佳單日：" + bestDay + " $" + bestDayRev.toLocaleString();
+    
+    return msg;
+    
+  } catch (err) {
+    return "❌ 查詢失敗：" + err.toString();
+  }
+}
+
+// =============================================
+// 📤 透過 LINE Reply API 回覆訊息
+// =============================================
+function replyToLine(replyToken, message) {
+  var url = "https://api.line.me/v2/bot/message/reply";
+  var payload = {
+    replyToken: replyToken,
+    messages: [{
+      type: "text",
+      text: message
+    }]
+  };
+  
+  UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    headers: {
+      "Authorization": "Bearer " + LINE_CHANNEL_ACCESS_TOKEN
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
 }
