@@ -282,6 +282,13 @@
         gradient.addColorStop(0, 'rgba(0, 185, 0, 0.4)');
         gradient.addColorStop(1, 'rgba(0, 185, 0, 0.0)');
 
+        // 找出數據的最大與最小值，來做精美的上下留白
+        let minVal = Math.min(...dataPoints);
+        let maxVal = Math.max(...dataPoints);
+        let padding = (maxVal - minVal) * 0.15 || maxVal * 0.1; // 如果全平，給個預設 padding
+        let suggestedMin = Math.max(0, minVal - padding);
+        let suggestedMax = maxVal + padding;
+
         chartInstance = new Chart(ctx, {
             type: 'line',
             data: {
@@ -321,7 +328,9 @@
                 scales: {
                     x: { grid: { display: false } },
                     y: {
-                        beginAtZero: true,
+                        beginAtZero: false,
+                        suggestedMin: suggestedMin,
+                        suggestedMax: suggestedMax,
                         grid: { color: '#eee', borderDash: [5, 5] },
                         ticks: {
                             callback: function(value) {
