@@ -12,7 +12,8 @@
         h1 { text-align: center; color: #00B900; margin-bottom: 5px; font-size: 22px; }
         p.subtitle { text-align: center; color: #666; margin-top: 0; margin-bottom: 20px; font-size: 14px; }
         
-        .chart-container { position: relative; height: 55vh; min-height: 300px; width: 100%; }
+        .chart-scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+        .chart-container { position: relative; height: 55vh; min-height: 300px; }
         
         .loading { text-align: center; color: #888; font-weight: bold; margin-top: 50px; }
         .error { color: #d9534f; text-align: center; font-weight: bold; margin-top: 20px; display: none; }
@@ -67,8 +68,10 @@
     <div id="loadingMsg" class="loading">資料載入中，請稍候...</div>
     <div id="errorMsg" class="error">資料讀取失敗，請稍後再試。</div>
     
-    <div class="chart-container" id="chartWrapper" style="display: none;">
-        <canvas id="revenueChart"></canvas>
+    <div class="chart-scroll-wrapper" id="chartWrapper" style="display: none;">
+        <div class="chart-container" id="chartInner">
+            <canvas id="revenueChart"></canvas>
+        </div>
     </div>
     
     <a href="index.html" class="btn-back">🔙 返回填表頁面</a>
@@ -280,6 +283,9 @@
     // 🔀 四週對比模式：重疊 4 條不同顏色的曲線
     // =============================================
     function renderCompareChart() {
+        // 四週對比只有 5 個點 (一~五)，不需要捲動
+        document.getElementById('chartInner').style.width = '100%';
+
         const ctx = document.getElementById('revenueChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
 
@@ -402,6 +408,12 @@
     }
 
     function renderChart(labels, dataPoints) {
+        // 動態計算圖表寬度：每個資料點至少 55px，確保手機上不擠
+        const chartInner = document.getElementById('chartInner');
+        const wrapperWidth = document.getElementById('chartWrapper').clientWidth;
+        const minWidth = labels.length * 55;
+        chartInner.style.width = (minWidth > wrapperWidth ? minWidth : wrapperWidth) + 'px';
+
         const ctx = document.getElementById('revenueChart').getContext('2d');
         
         // 如果已經有圖表實體，先銷毀它以免重疊
@@ -461,11 +473,10 @@
                     x: {
                         grid: { display: false },
                         ticks: {
-                            maxRotation: 45,
-                            minRotation: 45,
-                            font: { size: 11 },
-                            autoSkip: true,
-                            maxTicksLimit: 12
+                            maxRotation: 0,
+                            minRotation: 0,
+                            font: { size: 12, weight: 'bold' },
+                            autoSkip: false
                         }
                     },
                     y: {
