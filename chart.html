@@ -55,6 +55,13 @@
             <!-- JS 動態產生 -->
         </select>
     </div>
+
+    <!-- 進階過濾選項 -->
+    <div id="filterOptions" style="display: none; margin-bottom: 15px; text-align: right;">
+        <label style="cursor: pointer; font-size: 15px; color: #555; font-weight: bold; background: #fff; padding: 6px 12px; border-radius: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <input type="checkbox" id="excludeSat" onchange="updateChart()" style="transform: scale(1.2); margin-right: 5px;"> 🚫 排除星期六
+        </label>
+    </div>
     
     <div id="loadingMsg" class="loading">資料載入中，請稍候...</div>
     <div id="errorMsg" class="error">資料讀取失敗，請稍後再試。</div>
@@ -154,6 +161,7 @@
 
                     // 顯示 UI
                     document.getElementById('viewTabs').style.display = 'flex';
+                    document.getElementById('filterOptions').style.display = 'block';
                     document.getElementById('chartWrapper').style.display = 'block';
                     
                     fetchWeatherData();
@@ -239,6 +247,24 @@
                 dataToRender = weeksData[weekIndex].data;
             }
         }
+
+        // 1. 排除星期六邏輯
+        if (document.getElementById('excludeSat').checked) {
+            let filteredLabels = [];
+            let filteredData = [];
+            for (let i = 0; i < labelsToRender.length; i++) {
+                if (!labelsToRender[i].includes('(六)')) {
+                    filteredLabels.push(labelsToRender[i]);
+                    filteredData.push(dataToRender[i]);
+                }
+            }
+            labelsToRender = filteredLabels;
+            dataToRender = filteredData;
+        }
+
+        // 2. 移除月份顯示，只保留「日期(星期) 天氣」
+        // 例如：從 "6/27(六) ☀️" 變成 "27(六) ☀️"
+        labelsToRender = labelsToRender.map(label => label.replace(/^\d+\//, ''));
 
         renderChart(labelsToRender, dataToRender);
     }
