@@ -45,8 +45,9 @@
     
     <!-- 檢視切換區 -->
     <div class="tabs" id="viewTabs" style="display: none;">
-        <div class="tab active" id="tabMonth" onclick="switchView('month')">📅 當月全景</div>
-        <div class="tab" id="tabWeek" onclick="switchView('week')">📆 單週檢視</div>
+        <div class="tab active" id="tabMonth" onclick="switchView('month')">📅 當月</div>
+        <div class="tab" id="tabWeek" onclick="switchView('week')">📆 單週</div>
+        <div class="tab" id="tabCompare" onclick="switchView('compare')">🔀 四週對比</div>
     </div>
     
     <!-- 週次選擇器 (預設隱藏) -->
@@ -232,11 +233,18 @@
         currentView = view;
         document.getElementById('tabMonth').classList.toggle('active', view === 'month');
         document.getElementById('tabWeek').classList.toggle('active', view === 'week');
+        document.getElementById('tabCompare').classList.toggle('active', view === 'compare');
         document.getElementById('weekSelector').style.display = (view === 'week') ? 'block' : 'none';
         updateChart();
     }
 
     function updateChart() {
+        // 四週對比模式：走專屬的多曲線渲染
+        if (currentView === 'compare') {
+            renderCompareChart();
+            return;
+        }
+
         let labelsToRender = fullLabels;
         let dataToRender = fullData;
 
@@ -262,11 +270,135 @@
             dataToRender = filteredData;
         }
 
-        // 2. 移除月份顯示，只保留「日期(星期) 天氣」
-        // 例如：從 "6/27(六) ☀️" 變成 "27(六) ☀️"
+        // 2. 移除月份顯示
         labelsToRender = labelsToRender.map(label => label.replace(/^\d+\//, ''));
 
         renderChart(labelsToRender, dataToRender);
+    }
+
+    // =============================================
+    // 🔀 四週對比模式：重疊 4 條不同顏色的曲線
+    // =============================================
+    function renderCompareChart() {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+
+        // 取最近 4 週的資料 (已經是週一~週五)
+        let recentWeeks = weeksData.slice(-4);
+        if (recentWeeks.length === 0) {
+            renderChart(['無資料'], [0]);
+            return;
+        }
+
+        // 固定 X 軸標籤：星期一 ~ 星期五
+        const weekdayLabels = ['星期一', '星期二', '星期三', '星期四', '星期五'];
+
+        // 每週一個顏色
+        const weekColors = [
+            { border: '#AAAAAA', bg: 'rgba(170,170,170,0.08)', point: '#999999' },
+            { border: '#F5A623', bg: 'rgba(245,166,35,0.08)', point: '#E09000' },
+            { border: '#4A90D9', bg: 'rgba(74,144,217,0.08)', point: '#3070B0' },
+            { border: '#00B900', bg: 'rgba(0,185,0,0.15)', point: '#009900' }
+        ];
+
+        let datasets = [];
+        let allValues = [];
+
+        recentWeeks.forEach((week, idx) => {
+            // 將資料對齊到星期一~五的位置
+            let aligned = [null, null, null, null, null];
+            week.labels.forEach((label, i) => {
+                if (label.includes('(一)')) aligned[0] = week.data[i];
+                else if (label.includes('(二)')) aligned[1] = week.data[i];
+                else if (label.includes('(三)')) aligned[2] = week.data[i];
+                else if (label.includes('(四)')) aligned[3] = week.data[i];
+                else if (label.includes('(五)')) aligned[4] = week.data[i];
+            });
+
+            aligned.forEach(v => { if (v !== null) allValues.push(v); });
+
+            // 判斷是否為最新的一週 (最後一筆)
+            let isLatest = (idx === recentWeeks.length - 1);
+            let color = weekColors[idx] || weekColors[0];
+
+            // 從 label 取得日期範圍作為圖例名稱
+            let legendName = week.label.replace(/第 \d+ 週 /, '');
+
+            datasets.push({
+                label: isLatest ? '★ 本週 ' + legendName : legendName,
+                data: aligned,
+                borderColor: color.border,
+                backgroundColor: isLatest ? color.bg : 'transparent',
+                borderWidth: isLatest ? 3.5 : 2,
+                borderDash: isLatest ? [] : [6, 3],
+                pointBackgroundColor: '#fff',
+                pointBorderColor: color.point,
+                pointBorderWidth: isLatest ? 3 : 1.5,
+                pointRadius: isLatest ? 5 : 3,
+                pointHoverRadius: 7,
+                fill: isLatest,
+                tension: 0.3,
+                spanGaps: true
+            });
+        });
+
+        // 動態縮放 Y 軸
+        let minVal = Math.min(...allValues);
+        let maxVal = Math.max(...allValues);
+        let padding = (maxVal - minVal) * 0.15 || maxVal * 0.1;
+        let suggestedMin = Math.max(0, minVal - padding);
+        let suggestedMax = maxVal + padding;
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels: weekdayLabels, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 18,
+                            padding: 12,
+                            font: { size: 12, weight: 'bold' },
+                            usePointStyle: true,
+                            pointStyle: 'line'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 14, weight: 'bold' },
+                        callbacks: {
+                            label: function(context) {
+                                if (context.parsed.y === null) return '';
+                                return context.dataset.label + ': $' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 13, weight: 'bold' } }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: suggestedMin,
+                        suggestedMax: suggestedMax,
+                        grid: { color: '#eee', borderDash: [5, 5] },
+                        ticks: {
+                            callback: function(value) {
+                                if (value >= 1000) return (value / 1000) + 'k';
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     function renderChart(labels, dataPoints) {
