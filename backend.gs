@@ -306,21 +306,48 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     } else if (action === 'getAllProductSales') {
       var targetMonthStr = e.parameter.month; // e.g. "六月"
+      var monthMapping = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+      var targetMonthStr = e.parameter.month; // e.g. "六月"
       if (!targetMonthStr) {
-        var monthMapping = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
         var m = new Date().getMonth();
         targetMonthStr = monthMapping[m] + "月";
       }
       
+      // 計算上個月的名稱
+      var targetMonthName = targetMonthStr.replace("月", "");
+      var mIndex = monthMapping.indexOf(targetMonthName);
+      var prevMonthStr = "";
+      if (mIndex > 0) {
+        prevMonthStr = monthMapping[mIndex - 1] + "月";
+      } else if (mIndex === 0) {
+        prevMonthStr = "十二月";
+      }
+      
       var extSheetId = "1bvRiNRZYrhG4u4zf-T3dSJO17OpkhXVNueN2YaQtfqY";
       var extSs = SpreadsheetApp.openById(extSheetId);
-      var sheet = extSs.getSheetByName(targetMonthStr);
       
+      // 抓取當月
+      var sheet = extSs.getSheetByName(targetMonthStr);
       if (!sheet) {
         return ContentService.createTextOutput(JSON.stringify({
           status: "error",
           message: "找不到名為「" + targetMonthStr + "」的工作表"
         })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      // 抓取上個月 (如果不存在就不強求)
+      var prevSheet = extSs.getSheetByName(prevMonthStr);
+      var prevSalesDict = {};
+      if (prevSheet) {
+        var prevData = prevSheet.getDataRange().getValues();
+        for (var k = 1; k < prevData.length; k++) {
+          var pName = String(prevData[k][0]).trim();
+          var pSales = Number(prevData[k][6]);
+          if (pName !== "" && !isNaN(pSales) && pSales > 0) {
+            if (!prevSalesDict[pName]) prevSalesDict[pName] = 0;
+            prevSalesDict[pName] += pSales;
+          }
+        }
       }
       
       var data = sheet.getDataRange().getValues();
@@ -341,7 +368,11 @@ function doGet(e) {
       
       var result = [];
       for (var p in salesDict) {
-        result.push({ name: p, sales: salesDict[p] });
+        result.push({ 
+          name: p, 
+          sales: salesDict[p],
+          prevSales: prevSalesDict[p] !== undefined ? prevSalesDict[p] : null
+        });
       }
       
       // 依照銷量由高到低排序
@@ -350,6 +381,7 @@ function doGet(e) {
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
         month: targetMonthStr,
+        prevMonth: prevMonthStr,
         data: result
       })).setMimeType(ContentService.MimeType.JSON);
     }
