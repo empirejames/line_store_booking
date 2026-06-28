@@ -393,9 +393,9 @@
                         type: 'line',
                         label: '嫩雞平均 (' + avgTender + ')',
                         data: tenderAvgData,
-                        borderColor: 'rgba(245, 166, 35, 1)',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
+                        borderColor: '#0055ff', // 明顯的藍色實線
+                        borderWidth: 2.5,
+                        borderDash: [], // 實線
                         pointRadius: 0,
                         fill: false,
                         order: 1,
@@ -405,9 +405,9 @@
                         type: 'line',
                         label: '烤雞平均 (' + avgRoast + ')',
                         data: roastAvgData,
-                        borderColor: 'rgba(217, 83, 79, 1)',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
+                        borderColor: '#00B900', // 明顯的綠色實線
+                        borderWidth: 2.5,
+                        borderDash: [], // 實線
                         pointRadius: 0,
                         fill: false,
                         order: 1,
@@ -421,8 +421,12 @@
                 plugins: {
                     legend: {
                         display: true,
-                        position: 'top',
-                        labels: { font: { size: 13, weight: 'bold' } }
+                        position: 'bottom', // 移到下方，空間較大容易自動換行成兩列
+                        labels: { 
+                            font: { size: 12, weight: 'bold' },
+                            boxWidth: 15,
+                            padding: 10
+                        }
                     },
                     datalabels: {
                         display: true,
