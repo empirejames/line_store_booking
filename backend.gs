@@ -597,25 +597,44 @@ function smartQueryProductSales(sentence) {
     // 移除不必要的關鍵字，讓商品配對更精準
     var cleanSentence = sentence.replace("查詢", "").replace(targetMonthNum + "月", "").replace(extSheetName, "");
 
+    var maxLcsLen = 0;
+
+    // 第一階段：掃描所有商品，找出跟使用者的句子「重疊字數最多」的最佳匹配商品
     for (var i = 1; i < data.length; i++) {
       var rowProductName = String(data[i][0]).trim();
-      var rowSales = Number(data[i][6]);
       
       if (rowProductName !== "" && rowProductName.length >= 2) {
-        // 反向比對：使用者的句子是否包含這個商品名稱，或是這個商品名稱包含了使用者的詞
-        // 放寬標準：使用者輸入「嫩雞」，表格寫「招牌嫩雞胸」，這樣也能找到
-        if (cleanSentence.includes(rowProductName) || rowProductName.includes(cleanSentence.trim())) {
-          matchedProductName = rowProductName; 
-          if (!isNaN(rowSales) && rowSales > 0) {
-            totalSales += rowSales; 
+        var lcs = "";
+        // 找出 cleanSentence 和 rowProductName 的最長共同子字串 (Longest Common Substring)
+        for (var start = 0; start < cleanSentence.length; start++) {
+          for (var end = start + 1; end <= cleanSentence.length; end++) {
+            var sub = cleanSentence.substring(start, end);
+            if (rowProductName.includes(sub) && sub.length > lcs.length) {
+              lcs = sub;
+            }
           }
-          break; // 找到就停止，避免配對到其他無關的
+        }
+        
+        // 只要有 2 個字以上吻合，且比目前找到的更長，就認定它是最可能的商品
+        if (lcs.length >= 2 && lcs.length > maxLcsLen) {
+          maxLcsLen = lcs.length;
+          matchedProductName = rowProductName;
         }
       }
     }
     
-    if (matchedProductName === "") {
-      return "🤔 抱歉，我無法在「" + extSheetName + "」的表格中辨識出您想查詢的「商品名稱」喔！\n請試著輸入明確的商品名，例如：查詢六月嫩雞";
+    // 第二階段：如果有找到匹配的商品，就把該商品的所有銷量加總
+    if (matchedProductName !== "") {
+      for (var j = 1; j < data.length; j++) {
+        if (String(data[j][0]).trim() === matchedProductName) {
+          var rowSales = Number(data[j][6]);
+          if (!isNaN(rowSales) && rowSales > 0) {
+            totalSales += rowSales; 
+          }
+        }
+      }
+    } else {
+      return "🤔 抱歉，我無法在「" + extSheetName + "」的表格中辨識出您想查詢的「商品名稱」喔！\n表格內的商品可能有特定全名（例如：好吃嫩雞飯），請確定您的句子有包含商品的部分名稱。";
     }
     
     var avgSales = totalSales / operatingDays;
