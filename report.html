@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>商品銷售排行榜</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      --gold: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      --silver: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+      --bronze: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 20px;
+      padding-bottom: 50px;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-top: 10px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+
+    .month-selector {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      outline: none;
+      appearance: none;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px;
+      padding-right: 36px;
+      transition: border-color 0.3s;
+    }
+
+    .month-selector:focus {
+      border-color: var(--accent);
+    }
+    
+    .month-selector option {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+    }
+
+    .leaderboard {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transform: translateY(0);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: slideUp 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .rank {
+      font-size: 20px;
+      font-weight: 800;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .card:nth-child(1) .rank { background: var(--gold); color: #fff; box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+    .card:nth-child(2) .rank { background: var(--silver); color: #fff; box-shadow: 0 0 15px rgba(148, 163, 184, 0.4); }
+    .card:nth-child(3) .rank { background: var(--bronze); color: #fff; box-shadow: 0 0 15px rgba(217, 119, 6, 0.4); }
+
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .product-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .sales-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+    }
+    
+    .sales-value span {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: 4px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--accent-gradient);
+      border-radius: 4px;
+      width: 0%;
+      transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .card:nth-child(1) .progress-bar { background: var(--gold); }
+    .card:nth-child(2) .progress-bar { background: var(--silver); }
+    .card:nth-child(3) .progress-bar { background: var(--bronze); }
+
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+      background-size: 200% 100%;
+      animation: skeletonLoading 1.5s infinite;
+      border-radius: 4px;
+    }
+
+    @keyframes skeletonLoading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .skeleton-card {
+      height: 80px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 50px 20px;
+      color: var(--text-muted);
+      font-size: 16px;
+      display: none;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>排行榜</h1>
+    <select class="month-selector" id="monthSelect">
+      <option value="一月">一月</option>
+      <option value="二月">二月</option>
+      <option value="三月">三月</option>
+      <option value="四月">四月</option>
+      <option value="五月">五月</option>
+      <option value="六月">六月</option>
+      <option value="七月">七月</option>
+      <option value="八月">八月</option>
+      <option value="九月">九月</option>
+      <option value="十月">十月</option>
+      <option value="十一月">十一月</option>
+      <option value="十二月">十二月</option>
+    </select>
+  </header>
+
+  <div id="loading" class="leaderboard">
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+  </div>
+
+  <div id="emptyState" class="empty-state">
+    <div class="empty-state-icon">📊</div>
+    <p id="emptyText">此月份目前沒有銷售紀錄</p>
+  </div>
+
+  <div id="leaderboard" class="leaderboard">
+    <!-- Cards will be injected here -->
+  </div>
+
+  <script>
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCqGQ2jc__cqcYtfHUI-2PBRZFoHWALGkvVW8RAzJaQ6V2K3lJfIMMfZbi5TBVWfVM/exec';
+
+    const monthSelect = document.getElementById('monthSelect');
+    const loadingEl = document.getElementById('loading');
+    const leaderboardEl = document.getElementById('leaderboard');
+    const emptyStateEl = document.getElementById('emptyState');
+    const emptyTextEl = document.getElementById('emptyText');
+
+    const currentMonthNum = new Date().getMonth();
+    monthSelect.selectedIndex = currentMonthNum;
+
+    monthSelect.addEventListener('change', (e) => {
+      fetchSalesData(e.target.value);
+    });
+
+    fetchSalesData(monthSelect.value);
+
+    async function fetchSalesData(month) {
+      loadingEl.style.display = 'flex';
+      leaderboardEl.style.display = 'none';
+      emptyStateEl.style.display = 'none';
+      leaderboardEl.innerHTML = '';
+
+      try {
+        const url = `${GAS_URL}?action=getAllProductSales&month=${encodeURIComponent(month)}`;
+        const response = await fetch(url);
+        const result = await response.json();
+
+        loadingEl.style.display = 'none';
+
+        if (result.status === 'success' && result.data && result.data.length > 0) {
+          renderLeaderboard(result.data);
+          leaderboardEl.style.display = 'flex';
+        } else {
+          emptyTextEl.textContent = result.message || `「${month}」目前沒有任何銷售紀錄`;
+          emptyStateEl.style.display = 'block';
+        }
+      } catch (err) {
+        loadingEl.style.display = 'none';
+        emptyTextEl.textContent = "資料讀取失敗，請確認網路連線或稍後再試";
+        emptyStateEl.style.display = 'block';
+        console.error(err);
+      }
+    }
+
+    function renderLeaderboard(data) {
+      const maxSales = data.length > 0 ? data[0].sales : 1;
+
+      data.forEach((item, index) => {
+        const rank = index + 1;
+        const percentage = Math.max(5, (item.sales / maxSales) * 100);
+        
+        const delay = index * 0.05;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.animationDelay = `${delay}s`;
+
+        card.innerHTML = `
+          <div class="rank">${rank}</div>
+          <div class="content">
+            <div class="info-row">
+              <div class="product-name">${item.name}</div>
+              <div class="sales-value">${item.sales}<span>份</span></div>
+            </div>
+            <div class="progress-track">
+              <div class="progress-bar" style="width: 0%" data-target="${percentage}%"></div>
+            </div>
+          </div>
+        `;
+
+        leaderboardEl.appendChild(card);
+      });
+
+      setTimeout(() => {
+        const bars = document.querySelectorAll('.progress-bar');
+        bars.forEach(bar => {
+          bar.style.width = bar.getAttribute('data-target');
+        });
+      }, 100);
+    }
+  </script>
+</body>
+</html>

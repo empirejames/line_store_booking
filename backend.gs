@@ -304,6 +304,54 @@ function doGet(e) {
         todayLunchDiff: todayLunchDiff,
         todayTotalDiff: todayTotalDiff
       })).setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'getAllProductSales') {
+      var targetMonthStr = e.parameter.month; // e.g. "六月"
+      if (!targetMonthStr) {
+        var monthMapping = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+        var m = new Date().getMonth();
+        targetMonthStr = monthMapping[m] + "月";
+      }
+      
+      var extSheetId = "1bvRiNRZYrhG4u4zf-T3dSJO17OpkhXVNueN2YaQtfqY";
+      var extSs = SpreadsheetApp.openById(extSheetId);
+      var sheet = extSs.getSheetByName(targetMonthStr);
+      
+      if (!sheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "error",
+          message: "找不到名為「" + targetMonthStr + "」的工作表"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var data = sheet.getDataRange().getValues();
+      var salesDict = {};
+      
+      // A欄(0)商品名, G欄(6)銷售數量
+      for (var i = 1; i < data.length; i++) {
+        var productName = String(data[i][0]).trim();
+        var sales = Number(data[i][6]);
+        
+        if (productName !== "" && !isNaN(sales) && sales > 0) {
+          if (!salesDict[productName]) {
+            salesDict[productName] = 0;
+          }
+          salesDict[productName] += sales;
+        }
+      }
+      
+      var result = [];
+      for (var p in salesDict) {
+        result.push({ name: p, sales: salesDict[p] });
+      }
+      
+      // 依照銷量由高到低排序
+      result.sort(function(a, b) { return b.sales - a.sales; });
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        month: targetMonthStr,
+        data: result
+      })).setMimeType(ContentService.MimeType.JSON);
     }
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({status: "error", message: error.toString()})).setMimeType(ContentService.MimeType.JSON);
@@ -336,6 +384,8 @@ function handleLineWebhook(data) {
       replyMsg = getTodayReport();
     } else if (userText === "本月總額" || userText === "本月") {
       replyMsg = getMonthReport();
+    } else if (userText.includes("報表")) {
+      replyMsg = "📊 您的專屬商品銷售報表已準備好：\n\n🔗 點擊下方連結查看排行榜：\nhttps://empirejames.github.io/line_store_booking/report.html";
     } else if (userText === "指令" || userText === "功能" || userText === "help") {
       replyMsg = "🤖 虛擬會計指令清單：\n\n"
         + "📌 「今日業績」— 查看今天的營收與差異值\n"
