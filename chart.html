@@ -349,6 +349,19 @@
             roastToRender.push(fullRoastData[i]);
         }
 
+        // 計算平均值 (忽略 0 的天數)
+        let sumTender = 0, countTender = 0;
+        let sumRoast = 0, countRoast = 0;
+        for (let i = 0; i < tenderToRender.length; i++) {
+            if (tenderToRender[i] > 0) { sumTender += tenderToRender[i]; countTender++; }
+            if (roastToRender[i] > 0) { sumRoast += roastToRender[i]; countRoast++; }
+        }
+        let avgTender = countTender > 0 ? Math.round(sumTender / countTender) : 0;
+        let avgRoast = countRoast > 0 ? Math.round(sumRoast / countRoast) : 0;
+
+        let tenderAvgData = new Array(labelsToRender.length).fill(avgTender);
+        let roastAvgData = new Array(labelsToRender.length).fill(avgRoast);
+
         // 重新設定寬度
         const chartInner = document.getElementById('chartInner');
         const wrapperWidth = document.getElementById('chartWrapper').clientWidth;
@@ -361,16 +374,44 @@
                 labels: labelsToRender,
                 datasets: [
                     {
+                        type: 'bar',
                         label: '嫩雞銷量',
                         data: tenderToRender,
                         backgroundColor: 'rgba(245, 166, 35, 0.9)', // 橘黃色
-                        borderRadius: 4
+                        borderRadius: 4,
+                        order: 2
                     },
                     {
+                        type: 'bar',
                         label: '烤雞銷量',
                         data: roastToRender,
                         backgroundColor: 'rgba(217, 83, 79, 0.9)', // 磚紅色
-                        borderRadius: 4
+                        borderRadius: 4,
+                        order: 2
+                    },
+                    {
+                        type: 'line',
+                        label: '嫩雞平均 (' + avgTender + ')',
+                        data: tenderAvgData,
+                        borderColor: 'rgba(245, 166, 35, 1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        order: 1,
+                        datalabels: { display: false } // 不顯示數字標籤
+                    },
+                    {
+                        type: 'line',
+                        label: '烤雞平均 (' + avgRoast + ')',
+                        data: roastAvgData,
+                        borderColor: 'rgba(217, 83, 79, 1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        order: 1,
+                        datalabels: { display: false } // 不顯示數字標籤
                     }
                 ]
             },
