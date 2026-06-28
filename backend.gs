@@ -450,15 +450,7 @@ function handleLineWebhook(data) {
     } else if (userText.toLowerCase().includes("excel")) {
       replyMsg = "🔗 您的 Excel 營收記帳表連結如下：\nhttps://docs.google.com/spreadsheets/d/1Yw47QEBNeIO1IjeItZ6d0CmJBdnKGeGBzOTUHBUJEPA/edit?gid=1596698359#gid=1596698359";
     } else if (userText === "指令" || userText === "功能" || userText === "help") {
-      replyMsg = "🤖 虛擬會計指令清單：\n\n"
-        + "📌 「今日業績」— 查看今天的營收與差異值\n"
-        + "📌 「本月總額」— 查看本月累積營收與日均業績\n"
-        + "📌 「圖表」— 查看本月的業績與午晚班圖表\n"
-        + "📌 「查詢 [商品名]」— 查詢商品平均日銷量\n"
-        + "📌 「報表」— 查看每個月的商品銷售排行榜\n"
-        + "📌 「時間」— 查看各時間點的平均交易熱度\n"
-        + "📌 「excel」— 快速取得營收記帳表連結\n"
-        + "📌 「指令」— 顯示此說明";
+      replyMsg = getHelpFlexMessage();
     } else if (isAskingSales) {
       // 如果句子包含問銷量的關鍵字，進入智慧比對模式
       replyMsg = smartQueryProductSales(userText);
@@ -605,14 +597,21 @@ function getMonthReport() {
 // =============================================
 // 📤 透過 LINE Reply API 回覆訊息
 // =============================================
-function replyToLine(replyToken, message) {
+function replyToLine(replyToken, messagePayload) {
   var url = "https://api.line.me/v2/bot/message/reply";
+  
+  var messages = [];
+  if (typeof messagePayload === 'string') {
+    messages = [{ type: "text", text: messagePayload }];
+  } else if (Array.isArray(messagePayload)) {
+    messages = messagePayload;
+  } else if (typeof messagePayload === 'object') {
+    messages = [messagePayload];
+  }
+  
   var payload = {
     replyToken: replyToken,
-    messages: [{
-      type: "text",
-      text: message
-    }]
+    messages: messages
   };
   
   UrlFetchApp.fetch(url, {
@@ -768,4 +767,59 @@ function smartQueryProductSales(sentence) {
   } catch (err) {
     return "❌ 查詢失敗，詳細錯誤：" + err.toString();
   }
+}
+
+// =============================================
+// 🎴 產生精美的 Flex Message (Carousel) 指令選單
+// =============================================
+function getHelpFlexMessage() {
+  return [{
+    "type": "flex",
+    "altText": "虛擬會計指令選單",
+    "contents": {
+      "type": "carousel",
+      "contents": [
+        {
+          "type": "bubble",
+          "header": { "type": "box", "layout": "vertical", "contents": [{ "type": "text", "text": "💰 營收速報", "weight": "bold", "color": "#1DB446", "size": "sm" }] },
+          "hero": { "type": "image", "url": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400", "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+          "body": { "type": "box", "layout": "vertical", "contents": [
+            { "type": "text", "text": "營收管理", "weight": "bold", "size": "xl" },
+            { "type": "text", "text": "快速查看當日與當月業績", "color": "#aaaaaa", "size": "xs", "wrap": true }
+          ] },
+          "footer": { "type": "box", "layout": "vertical", "spacing": "sm", "contents": [
+            { "type": "button", "style": "primary", "height": "sm", "action": { "type": "message", "label": "今日業績", "text": "今日業績" } },
+            { "type": "button", "style": "secondary", "height": "sm", "action": { "type": "message", "label": "本月總額", "text": "本月總額" } }
+          ] }
+        },
+        {
+          "type": "bubble",
+          "header": { "type": "box", "layout": "vertical", "contents": [{ "type": "text", "text": "📊 數據圖表", "weight": "bold", "color": "#1DB446", "size": "sm" }] },
+          "hero": { "type": "image", "url": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400", "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+          "body": { "type": "box", "layout": "vertical", "contents": [
+            { "type": "text", "text": "視覺化分析", "weight": "bold", "size": "xl" },
+            { "type": "text", "text": "掌握銷售排行與客流熱度", "color": "#aaaaaa", "size": "xs", "wrap": true }
+          ] },
+          "footer": { "type": "box", "layout": "vertical", "spacing": "sm", "contents": [
+            { "type": "button", "style": "primary", "height": "sm", "action": { "type": "message", "label": "查看業績圖表", "text": "圖表" } },
+            { "type": "button", "style": "primary", "height": "sm", "color": "#1e293b", "action": { "type": "message", "label": "商品銷售報表", "text": "報表" } },
+            { "type": "button", "style": "secondary", "height": "sm", "action": { "type": "message", "label": "時間熱度分析", "text": "時間熱度" } }
+          ] }
+        },
+        {
+          "type": "bubble",
+          "header": { "type": "box", "layout": "vertical", "contents": [{ "type": "text", "text": "🛠️ 進階工具", "weight": "bold", "color": "#1DB446", "size": "sm" }] },
+          "hero": { "type": "image", "url": "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=400", "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+          "body": { "type": "box", "layout": "vertical", "contents": [
+            { "type": "text", "text": "快速連結與查詢", "weight": "bold", "size": "xl" },
+            { "type": "text", "text": "下載表單或查詢單一商品", "color": "#aaaaaa", "size": "xs", "wrap": true }
+          ] },
+          "footer": { "type": "box", "layout": "vertical", "spacing": "sm", "contents": [
+            { "type": "button", "style": "primary", "height": "sm", "action": { "type": "message", "label": "取得 Excel 連結", "text": "excel" } },
+            { "type": "button", "style": "secondary", "height": "sm", "action": { "type": "message", "label": "如何查詢商品?", "text": "查詢六月嫩雞" } }
+          ] }
+        }
+      ]
+    }
+  }];
 }
