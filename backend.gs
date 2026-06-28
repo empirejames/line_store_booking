@@ -2,7 +2,7 @@
 // 🤖 LINE 對話機器人設定
 // 請將您的 LINE Channel Access Token 貼在下方引號內
 // ========================================
-var LINE_CHANNEL_ACCESS_TOKEN = '請貼上您的_LINE_CHANNEL_ACCESS_TOKEN';
+var LINE_CHANNEL_ACCESS_TOKEN = 'JN5CDum6yi1xrpO30WCVd7mL3BFrnZxOg4liMhENE7RF8WR1cdZqWhiki7vZ6wbYeURE4tCEUAQyg73uYN1e6fuJCqRXSssv57TXWg5Uoiv2qEHxNqiLpwCwqPE80pT4ixkXza4HoE5ABlpGYYUKgAdB04t89/1O/w1cDnyilFU=';
 
 function doPost(e) {
   try {
@@ -327,6 +327,10 @@ function handleLineWebhook(data) {
     var replyToken = event.replyToken;
     var replyMsg = "";
     
+    // 判斷是否在詢問銷量 (彈性多種問法)
+    var salesKeywords = ["平均", "銷售", "銷量", "賣多少", "賣出", "多少份", "業績"];
+    var isAskingSales = salesKeywords.some(function(kw) { return userText.includes(kw); });
+    
     // 🔍 關鍵字辨識
     if (userText === "今日業績" || userText === "今日") {
       replyMsg = getTodayReport();
@@ -346,6 +350,9 @@ function handleLineWebhook(data) {
         + "📌 「本月總額」— 查看本月累積營收與日均業績\n"
         + "📌 「查詢 [商品名]」— 跨表查詢商品平均日銷量（如：查詢貢丸湯）\n"
         + "📌 「指令」— 顯示此說明";
+    } else if (isAskingSales) {
+      // 如果句子包含問銷量的關鍵字，進入智慧比對模式
+      replyMsg = smartQueryProductSales(userText);
     }
     
     // 如果有匹配到指令，就回覆
@@ -581,6 +588,63 @@ function queryProductSales(productName) {
     avgSales = Math.round(avgSales * 10) / 10;
     
     var msg = "📦 查詢商品：" + productName + "\n"
+            + "━━━━━━━━━━━━\n"
+            + "📊 總銷售量：" + totalSales + " 份\n"
+            + "📅 計算天數：23 天\n"
+            + "📈 平均日銷量：" + avgSales + " 份/天";
+            
+    return msg;
+    
+  } catch (err) {
+    return "❌ 查詢失敗，可能是尚未授權存取該外部表格，或是網址有誤。\n詳細錯誤：" + err.toString();
+  }
+}
+
+// =============================================
+// 🧠 智慧查詢「商品平均日銷量」(反向比對句意)
+// =============================================
+function smartQueryProductSales(sentence) {
+  try {
+    // 外部商品銷售紀錄表的 ID
+    var extSheetId = "1bvRiNRZYrhG4u4zf-T3dSJO17OpkhXVNueN2YaQtfqY";
+    var extSs = SpreadsheetApp.openById(extSheetId);
+    var sheet = extSs.getSheetByName("五月");
+    
+    if (!sheet) {
+      return "⚠️ 找不到名為「五月」的工作表，請確認表格結構。";
+    }
+    
+    var data = sheet.getDataRange().getValues();
+    var matchedProductName = "";
+    var totalSales = 0;
+    
+    // 假設第一列是標題，從第二列開始搜尋 (index 1)
+    for (var i = 1; i < data.length; i++) {
+      var rowProductName = String(data[i][0]).trim();
+      var rowSales = Number(data[i][6]);
+      
+      if (rowProductName !== "") {
+        // 反向比對：如果整句話包含了這個商品名稱
+        if (sentence.includes(rowProductName)) {
+          matchedProductName = rowProductName; // 紀錄匹配到的商品
+          if (!isNaN(rowSales) && rowSales > 0) {
+            totalSales += rowSales; // 一併加總
+          }
+        }
+      }
+    }
+    
+    // 如果掃完了整個表格，還是沒發現有哪個商品被提到
+    if (matchedProductName === "") {
+      return "🤔 抱歉，我知道您想問銷量，但我無法在這句話中辨識出您想查詢哪一個「特定的商品名稱」喔！\n請試著輸入明確的商品名，例如：請問嫩雞賣多少？";
+    }
+    
+    // 平均日銷算法：總銷量 / 23天
+    var avgSales = totalSales / 23;
+    // 取到小數點第一位
+    avgSales = Math.round(avgSales * 10) / 10;
+    
+    var msg = "🧠 智慧辨識商品：" + matchedProductName + "\n"
             + "━━━━━━━━━━━━\n"
             + "📊 總銷售量：" + totalSales + " 份\n"
             + "📅 計算天數：23 天\n"
