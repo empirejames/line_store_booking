@@ -453,7 +453,7 @@ function handleLineWebhook(data) {
       replyMsg = getHelpFlexMessage();
     } else if (userText === "如何查詢商品?") {
       replyMsg = "💡 查詢商品說明：\n"
-               + "請輸入「月份 + 商品名」，例如：「六月好吃嫩雞飯」\n\n"
+               + "請輸入「查詢 + 月份 + 商品名」，例如：「查詢六月好吃嫩雞飯」\n\n"
                + "📌 支援的商品名稱列表：\n"
                + "好吃嫩雞飯\n"
                + "好吃烤雞飯\n"
