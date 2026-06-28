@@ -328,7 +328,7 @@ function handleLineWebhook(data) {
     var replyMsg = "";
     
     // 判斷是否在詢問銷量 (彈性多種問法)
-    var salesKeywords = ["平均", "銷售", "銷量", "賣多少", "賣出", "多少份", "業績"];
+    var salesKeywords = ["平均", "銷售", "銷量", "賣多少", "賣出", "多少份", "業績", "查詢"];
     var isAskingSales = salesKeywords.some(function(kw) { return userText.includes(kw); });
     
     // 🔍 關鍵字辨識
@@ -336,19 +336,11 @@ function handleLineWebhook(data) {
       replyMsg = getTodayReport();
     } else if (userText === "本月總額" || userText === "本月") {
       replyMsg = getMonthReport();
-    } else if (userText.startsWith("查詢")) {
-      // 擷取商品名稱，例如「查詢貢丸湯」或「查詢 貢丸湯」
-      var productName = userText.replace("查詢", "").trim();
-      if (productName !== "") {
-        replyMsg = queryProductSales(productName);
-      } else {
-        replyMsg = "⚠️ 請輸入要查詢的商品名稱，例如：「查詢貢丸湯」";
-      }
     } else if (userText === "指令" || userText === "功能" || userText === "help") {
       replyMsg = "🤖 虛擬會計指令清單：\n\n"
         + "📌 「今日業績」— 查看今天的營收與差異值\n"
         + "📌 「本月總額」— 查看本月累積營收與日均業績\n"
-        + "📌 「查詢 [商品名]」— 跨表查詢商品平均日銷量（如：查詢貢丸湯）\n"
+        + "📌 「查詢 [商品名]」— 跨表查詢商品平均日銷量（如：查詢六月嫩雞）\n"
         + "📌 「指令」— 顯示此說明";
     } else if (isAskingSales) {
       // 如果句子包含問銷量的關鍵字，進入智慧比對模式
@@ -545,114 +537,99 @@ function testBot() {
 }
 
 // =============================================
-// 📦 查詢「商品平均日銷量」(跨表查詢)
-// =============================================
-function queryProductSales(productName) {
-  try {
-    // 外部商品銷售紀錄表的 ID
-    var extSheetId = "1bvRiNRZYrhG4u4zf-T3dSJO17OpkhXVNueN2YaQtfqY";
-    var extSs = SpreadsheetApp.openById(extSheetId);
-    var sheet = extSs.getSheetByName("五月");
-    
-    if (!sheet) {
-      return "⚠️ 找不到名為「五月」的工作表，請確認表格結構。";
-    }
-    
-    var data = sheet.getDataRange().getValues();
-    var totalSales = 0;
-    var found = false;
-    
-    // 假設第一列是標題，從第二列開始搜尋 (index 1)
-    // A欄是商品名稱 (index 0)
-    // G欄是銷售數量 (index 6)
-    for (var i = 1; i < data.length; i++) {
-      var rowProductName = String(data[i][0]).trim();
-      var rowSales = Number(data[i][6]);
-      
-      // 使用 includes 進行模糊搜尋，只要包含關鍵字就算
-      if (rowProductName !== "" && rowProductName.includes(productName)) {
-        if (!isNaN(rowSales) && rowSales > 0) {
-          totalSales += rowSales;
-        }
-        found = true;
-      }
-    }
-    
-    if (!found) {
-      return "⚠️ 找不到與「" + productName + "」相關的商品紀錄。";
-    }
-    
-    // 平均日銷算法：總銷量 / 23天
-    var avgSales = totalSales / 23;
-    // 取到小數點第一位
-    avgSales = Math.round(avgSales * 10) / 10;
-    
-    var msg = "📦 查詢商品：" + productName + "\n"
-            + "━━━━━━━━━━━━\n"
-            + "📊 總銷售量：" + totalSales + " 份\n"
-            + "📅 計算天數：23 天\n"
-            + "📈 平均日銷量：" + avgSales + " 份/天";
-            
-    return msg;
-    
-  } catch (err) {
-    return "❌ 查詢失敗，可能是尚未授權存取該外部表格，或是網址有誤。\n詳細錯誤：" + err.toString();
-  }
-}
-
-// =============================================
-// 🧠 智慧查詢「商品平均日銷量」(反向比對句意)
+// 🧠 智慧查詢「商品平均日銷量」(反向比對句意與動態月份)
 // =============================================
 function smartQueryProductSales(sentence) {
   try {
-    // 外部商品銷售紀錄表的 ID
+    // 1. 判斷使用者問的是哪個月？
+    var monthMapping = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+    var targetMonthNum = new Date().getMonth() + 1; // 預設為當前月份
+    
+    // 檢查字串中是否包含「X月」
+    for (var m = 1; m <= 12; m++) {
+      if (sentence.includes(m + "月") || sentence.includes("0" + m + "月") || sentence.includes(monthMapping[m-1] + "月")) {
+        targetMonthNum = m;
+        break;
+      }
+    }
+    
+    var extSheetName = monthMapping[targetMonthNum - 1] + "月"; // e.g. "六月"
+    
+    // 2. 獲取該月份的營業天數（從目前的記帳本獲取，扣除禮拜六）
+    var internalSs = SpreadsheetApp.getActiveSpreadsheet();
+    var currentYear = new Date().getFullYear();
+    var internalSheetName = currentYear + "年" + targetMonthNum + "月";
+    var internalSheet = internalSs.getSheetByName(internalSheetName);
+    var operatingDays = 0;
+    
+    if (internalSheet) {
+      var internalData = internalSheet.getDataRange().getValues();
+      // 假設第一列為標題，從第二列開始
+      for (var r = 1; r < internalData.length; r++) {
+        var rowDate = internalData[r][0]; // A 欄是日期
+        if (rowDate instanceof Date) {
+          // getDay() 回傳 0-6，0 是週日，6 是週六
+          if (rowDate.getDay() !== 6) {
+            operatingDays++;
+          }
+        }
+      }
+    }
+    
+    // 預防萬一天數為 0 導致除以 0 錯誤
+    if (operatingDays === 0) {
+      operatingDays = 1; 
+    }
+
+    // 3. 連線外部表格獲取商品銷量
     var extSheetId = "1bvRiNRZYrhG4u4zf-T3dSJO17OpkhXVNueN2YaQtfqY";
     var extSs = SpreadsheetApp.openById(extSheetId);
-    var sheet = extSs.getSheetByName("五月");
+    var sheet = extSs.getSheetByName(extSheetName);
     
     if (!sheet) {
-      return "⚠️ 找不到名為「五月」的工作表，請確認表格結構。";
+      return "⚠️ 找不到名為「" + extSheetName + "」的銷售工作表。";
     }
     
     var data = sheet.getDataRange().getValues();
     var matchedProductName = "";
     var totalSales = 0;
     
-    // 假設第一列是標題，從第二列開始搜尋 (index 1)
+    // 移除不必要的關鍵字，讓商品配對更精準
+    var cleanSentence = sentence.replace("查詢", "").replace(targetMonthNum + "月", "").replace(extSheetName, "");
+
     for (var i = 1; i < data.length; i++) {
       var rowProductName = String(data[i][0]).trim();
       var rowSales = Number(data[i][6]);
       
-      if (rowProductName !== "") {
-        // 反向比對：如果整句話包含了這個商品名稱
-        if (sentence.includes(rowProductName)) {
-          matchedProductName = rowProductName; // 紀錄匹配到的商品
+      if (rowProductName !== "" && rowProductName.length >= 2) {
+        // 反向比對：使用者的句子是否包含這個商品名稱，或是這個商品名稱包含了使用者的詞
+        // 放寬標準：使用者輸入「嫩雞」，表格寫「招牌嫩雞胸」，這樣也能找到
+        if (cleanSentence.includes(rowProductName) || rowProductName.includes(cleanSentence.trim())) {
+          matchedProductName = rowProductName; 
           if (!isNaN(rowSales) && rowSales > 0) {
-            totalSales += rowSales; // 一併加總
+            totalSales += rowSales; 
           }
+          break; // 找到就停止，避免配對到其他無關的
         }
       }
     }
     
-    // 如果掃完了整個表格，還是沒發現有哪個商品被提到
     if (matchedProductName === "") {
-      return "🤔 抱歉，我知道您想問銷量，但我無法在這句話中辨識出您想查詢哪一個「特定的商品名稱」喔！\n請試著輸入明確的商品名，例如：請問嫩雞賣多少？";
+      return "🤔 抱歉，我無法在「" + extSheetName + "」的表格中辨識出您想查詢的「商品名稱」喔！\n請試著輸入明確的商品名，例如：查詢六月嫩雞";
     }
     
-    // 平均日銷算法：總銷量 / 23天
-    var avgSales = totalSales / 23;
-    // 取到小數點第一位
+    var avgSales = totalSales / operatingDays;
     avgSales = Math.round(avgSales * 10) / 10;
     
-    var msg = "🧠 智慧辨識商品：" + matchedProductName + "\n"
+    var msg = "📦 查詢商品：" + matchedProductName + " (" + extSheetName + ")\n"
             + "━━━━━━━━━━━━\n"
             + "📊 總銷售量：" + totalSales + " 份\n"
-            + "📅 計算天數：23 天\n"
+            + "📅 營業天數：" + operatingDays + " 天 (已扣除週六)\n"
             + "📈 平均日銷量：" + avgSales + " 份/天";
             
     return msg;
     
   } catch (err) {
-    return "❌ 查詢失敗，可能是尚未授權存取該外部表格，或是網址有誤。\n詳細錯誤：" + err.toString();
+    return "❌ 查詢失敗，詳細錯誤：" + err.toString();
   }
 }
