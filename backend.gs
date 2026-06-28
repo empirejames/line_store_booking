@@ -379,11 +379,13 @@ function handleLineWebhook(data) {
     var salesKeywords = ["平均", "銷售", "銷量", "賣多少", "賣出", "多少份", "業績", "查詢"];
     var isAskingSales = salesKeywords.some(function(kw) { return userText.includes(kw); });
     
-    // 🔍 關鍵字辨識
-    if (userText === "今日業績" || userText === "今日") {
+    // 🔍 關鍵字辨識 (使用彈性比對)
+    if (userText === "今日業績" || userText === "今日" || (userText.includes("今日") && (userText.includes("業績") || userText.includes("營收")))) {
       replyMsg = getTodayReport();
-    } else if (userText === "本月總額" || userText === "本月") {
+    } else if (userText === "本月總額" || userText === "本月" || ((userText.includes("本月") || userText.includes("這個月")) && (userText.includes("業績") || userText.includes("營收") || userText.includes("總額")))) {
       replyMsg = getMonthReport();
+    } else if (userText.includes("圖表")) {
+      replyMsg = "📈 您的專屬業績圖表已準備好：\n\n🔗 點擊下方連結查看：\nhttps://empirejames.github.io/line_store_booking/chart.html";
     } else if (userText.includes("報表")) {
       replyMsg = "📊 您的專屬商品銷售報表已準備好：\n\n🔗 點擊下方連結查看排行榜：\nhttps://empirejames.github.io/line_store_booking/report.html";
     } else if (userText === "指令" || userText === "功能" || userText === "help") {
