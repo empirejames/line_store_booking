@@ -332,10 +332,19 @@ function handleLineWebhook(data) {
       replyMsg = getTodayReport();
     } else if (userText === "本月總額" || userText === "本月") {
       replyMsg = getMonthReport();
+    } else if (userText.startsWith("查詢")) {
+      // 擷取商品名稱，例如「查詢貢丸湯」或「查詢 貢丸湯」
+      var productName = userText.replace("查詢", "").trim();
+      if (productName !== "") {
+        replyMsg = queryProductSales(productName);
+      } else {
+        replyMsg = "⚠️ 請輸入要查詢的商品名稱，例如：「查詢貢丸湯」";
+      }
     } else if (userText === "指令" || userText === "功能" || userText === "help") {
       replyMsg = "🤖 虛擬會計指令清單：\n\n"
         + "📌 「今日業績」— 查看今天的營收與差異值\n"
         + "📌 「本月總額」— 查看本月累積營收與日均業績\n"
+        + "📌 「查詢 [商品名]」— 跨表查詢商品平均日銷量（如：查詢貢丸湯）\n"
         + "📌 「指令」— 顯示此說明";
     }
     
@@ -526,4 +535,60 @@ function testBot() {
   
   Logger.log("HTTP Status: " + response.getResponseCode());
   Logger.log("Response: " + response.getContentText());
+}
+
+// =============================================
+// 📦 查詢「商品平均日銷量」(跨表查詢)
+// =============================================
+function queryProductSales(productName) {
+  try {
+    // 外部商品銷售紀錄表的 ID
+    var extSheetId = "1bvRiNRZYrhG4u4zf-T3dSJO17OpkhXVNueN2YaQtfqY";
+    var extSs = SpreadsheetApp.openById(extSheetId);
+    var sheet = extSs.getSheetByName("五月");
+    
+    if (!sheet) {
+      return "⚠️ 找不到名為「五月」的工作表，請確認表格結構。";
+    }
+    
+    var data = sheet.getDataRange().getValues();
+    var totalSales = 0;
+    var found = false;
+    
+    // 假設第一列是標題，從第二列開始搜尋 (index 1)
+    // A欄是商品名稱 (index 0)
+    // G欄是銷售數量 (index 6)
+    for (var i = 1; i < data.length; i++) {
+      var rowProductName = String(data[i][0]).trim();
+      var rowSales = Number(data[i][6]);
+      
+      // 使用 includes 進行模糊搜尋，只要包含關鍵字就算
+      if (rowProductName !== "" && rowProductName.includes(productName)) {
+        if (!isNaN(rowSales) && rowSales > 0) {
+          totalSales += rowSales;
+        }
+        found = true;
+      }
+    }
+    
+    if (!found) {
+      return "⚠️ 找不到與「" + productName + "」相關的商品紀錄。";
+    }
+    
+    // 平均日銷算法：總銷量 / 23天
+    var avgSales = totalSales / 23;
+    // 取到小數點第一位
+    avgSales = Math.round(avgSales * 10) / 10;
+    
+    var msg = "📦 查詢商品：" + productName + "\n"
+            + "━━━━━━━━━━━━\n"
+            + "📊 總銷售量：" + totalSales + " 份\n"
+            + "📅 計算天數：23 天\n"
+            + "📈 平均日銷量：" + avgSales + " 份/天";
+            
+    return msg;
+    
+  } catch (err) {
+    return "❌ 查詢失敗，可能是尚未授權存取該外部表格，或是網址有誤。\n詳細錯誤：" + err.toString();
+  }
 }
