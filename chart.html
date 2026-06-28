@@ -26,8 +26,8 @@
         .btn-back:active { background-color: #ccc; }
         
         /* 切換按鈕 (Segmented Control) */
-        .tabs { display: flex; background: #e0e0e0; border-radius: 10px; margin-bottom: 15px; overflow: hidden; padding: 4px; }
-        .tab { flex: 1; text-align: center; padding: 10px; font-weight: bold; font-size: 15px; color: #666; cursor: pointer; border-radius: 8px; transition: 0.3s; }
+        .tabs { display: flex; background: #e0e0e0; border-radius: 10px; margin-bottom: 15px; overflow-x: auto; white-space: nowrap; padding: 4px; }
+        .tab { flex: 1; text-align: center; padding: 10px 8px; font-weight: bold; font-size: 14px; color: #666; cursor: pointer; border-radius: 8px; transition: 0.3s; min-width: 70px; }
         .tab.active { background: white; color: #00B900; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     </style>
 </head>
@@ -50,6 +50,7 @@
         <div class="tab active" id="tabMonth" onclick="switchView('month')">📅 當月</div>
         <div class="tab" id="tabWeek" onclick="switchView('week')">📆 單週</div>
         <div class="tab" id="tabCompare" onclick="switchView('compare')">🔀 四週對比</div>
+        <div class="tab" id="tabProduct" onclick="switchView('product')">🍗 銷量</div>
     </div>
     
     <!-- 週次選擇器 (預設隱藏) -->
@@ -91,6 +92,8 @@
     // 全域變數儲存資料與狀態
     let fullLabels = [];
     let fullData = [];
+    let fullTenderData = [];
+    let fullRoastData = [];
     let currentView = 'month'; // 'month' 或 'week'
     let weeksData = [];
     let chartInstance = null;
@@ -109,6 +112,8 @@
                     
                     fullLabels = data.chartLabels || [];
                     fullData = data.chartData || [];
+                    fullTenderData = data.chartTenderData || [];
+                    fullRoastData = data.chartRoastData || [];
                     
                     // 解析週次資料：以星期一為起始，並只收錄一到六的資料
                     weeksData = [];
@@ -241,7 +246,18 @@
         document.getElementById('tabMonth').classList.toggle('active', view === 'month');
         document.getElementById('tabWeek').classList.toggle('active', view === 'week');
         document.getElementById('tabCompare').classList.toggle('active', view === 'compare');
+        document.getElementById('tabProduct').classList.toggle('active', view === 'product');
+        
         document.getElementById('weekSelector').style.display = (view === 'week') ? 'block' : 'none';
+        
+        if (view === 'product') {
+            document.getElementById('monthTitle').innerText = '🍗 商品銷量走勢圖';
+            document.querySelector('.subtitle').innerText = '每日嫩雞與烤雞數量';
+        } else {
+            document.getElementById('monthTitle').innerText = '📈 營收走勢圖';
+            document.querySelector('.subtitle').innerText = '本月全天候業績趨勢';
+        }
+
         updateChart();
     }
 
@@ -249,6 +265,12 @@
         // 四週對比模式：走專屬的多曲線渲染
         if (currentView === 'compare') {
             renderCompareChart();
+            return;
+        }
+        
+        // 銷量模式：走專屬的雙柱狀圖
+        if (currentView === 'product') {
+            renderProductChart();
             return;
         }
 
@@ -302,6 +324,91 @@
         });
 
         renderChart(xLabels, dataToRender, pointLabels);
+    }
+    
+    // =============================================
+    // 🍗 銷量模式：雙柱長條圖
+    // =============================================
+    function renderProductChart() {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+
+        // 排除星期六邏輯
+        let labelsToRender = [];
+        let tenderToRender = [];
+        let roastToRender = [];
+        let excludeSat = document.getElementById('excludeSat').checked;
+
+        for (let i = 0; i < fullLabels.length; i++) {
+            if (excludeSat && fullLabels[i].includes('(六)')) continue;
+            // 簡化 Label，去掉月份
+            let noMonthLabel = fullLabels[i].replace(/^\d+\//, '');
+            let match = noMonthLabel.match(/^(\d+)/);
+            labelsToRender.push(match ? match[1] : noMonthLabel);
+            tenderToRender.push(fullTenderData[i]);
+            roastToRender.push(fullRoastData[i]);
+        }
+
+        // 重新設定寬度
+        const chartInner = document.getElementById('chartInner');
+        const wrapperWidth = document.getElementById('chartWrapper').clientWidth;
+        const minWidth = labelsToRender.length * 60; // 雙柱需要多一點空間
+        chartInner.style.width = (minWidth > wrapperWidth ? minWidth : wrapperWidth) + 'px';
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labelsToRender,
+                datasets: [
+                    {
+                        label: '嫩雞銷量',
+                        data: tenderToRender,
+                        backgroundColor: 'rgba(245, 166, 35, 0.9)', // 橘黃色
+                        borderRadius: 4
+                    },
+                    {
+                        label: '烤雞銷量',
+                        data: roastToRender,
+                        backgroundColor: 'rgba(217, 83, 79, 0.9)', // 磚紅色
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { font: { size: 13, weight: 'bold' } }
+                    },
+                    datalabels: {
+                        display: true,
+                        align: 'top',
+                        anchor: 'end',
+                        color: '#666',
+                        font: { size: 11, weight: 'bold' },
+                        formatter: function(value) { return value > 0 ? value : ''; }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        bodyFont: { size: 14, weight: 'bold' }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 12, weight: 'bold' } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#eee', borderDash: [5, 5] },
+                        ticks: { stepSize: 10 }
+                    }
+                }
+            }
+        });
     }
 
     // =============================================

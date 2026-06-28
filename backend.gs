@@ -244,6 +244,8 @@ function doGet(e) {
       var daysCount = 0;
       var chartLabels = [];
       var chartData = [];
+      var chartTenderData = [];
+      var chartRoastData = [];
       
       var todayDateStr = "今日";
       var todayLunchDiff = 0;
@@ -264,6 +266,14 @@ function doGet(e) {
              var dayStr = (dateValue.getMonth() + 1) + "/" + dateValue.getDate() + "(" + weekdays[dayOfWeek] + ")";
              chartLabels.push(dayStr);
              chartData.push(dailyTotal);
+             
+             // 抓取嫩雞今日用 (index 3)
+             var tenderQty = Number(data[i][3]) || 0;
+             chartTenderData.push(tenderQty);
+             
+             // 抓取烤雞今日用 = 午班(index 6) + 晚班(index 7)
+             var roastQty = (Number(data[i][6]) || 0) + (Number(data[i][7]) || 0);
+             chartRoastData.push(roastQty);
           }
           
           // 平均業績：只統計週一(1) 到 週五(5)
@@ -300,6 +310,8 @@ function doGet(e) {
         average: average,
         chartLabels: chartLabels,
         chartData: chartData,
+        chartTenderData: chartTenderData,
+        chartRoastData: chartRoastData,
         todayDateStr: todayDateStr,
         todayLunchDiff: todayLunchDiff,
         todayTotalDiff: todayTotalDiff
