@@ -319,14 +319,13 @@
             // 我們把月份拿掉變成 "27(六) ☀️"
             let noMonthLabel = label.replace(/^\d+\//, '');
             
-            // 用正則表達式拆分：日期 (例如 27) 與 其他部分 (例如 (六) ☀️)
-            let match = noMonthLabel.match(/^(\d+)(\(.+\).*)$/);
+            let match = noMonthLabel.match(/^(\d+)(\(.+?\))(.*)$/);
             if (match) {
-                xLabels.push(match[1]); // "27"
-                // 組合：星期 + 天氣 + 換行 + 業績
-                // datalabels 支援陣列作為多行文字
+                // 將日期與星期幾結合作為 X 軸標籤，例如 "27\n(六)"，Chart.js 支援陣列換行
+                xLabels.push([match[1], match[2]]); 
+                // 組合：天氣 + 換行 + 業績
                 let revenueStr = '$' + (dataToRender[index] >= 1000 ? (dataToRender[index] / 1000) + 'k' : dataToRender[index]);
-                pointLabels.push([match[2].trim(), revenueStr]);
+                pointLabels.push([match[3].trim(), revenueStr]);
             } else {
                 xLabels.push(noMonthLabel);
                 let revenueStr = '$' + (dataToRender[index] >= 1000 ? (dataToRender[index] / 1000) + 'k' : dataToRender[index]);
@@ -352,10 +351,15 @@
 
         for (let i = 0; i < fullLabels.length; i++) {
             if (excludeSat && fullLabels[i].includes('(六)')) continue;
-            // 簡化 Label，去掉月份
+            // 簡化 Label，去掉月份，保留日期與星期幾
             let noMonthLabel = fullLabels[i].replace(/^\d+\//, '');
-            let match = noMonthLabel.match(/^(\d+)/);
-            labelsToRender.push(match ? match[1] : noMonthLabel);
+            let match = noMonthLabel.match(/^(\d+)(\(.+?\))/);
+            if (match) {
+                // 產生類似 ["27", "(六)"] 的陣列讓 X 軸換行顯示
+                labelsToRender.push([match[1], match[2]]);
+            } else {
+                labelsToRender.push(noMonthLabel);
+            }
             tenderToRender.push(fullTenderData[i]);
             roastToRender.push(fullRoastData[i]);
         }
