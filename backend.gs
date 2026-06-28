@@ -388,6 +388,8 @@ function handleLineWebhook(data) {
       replyMsg = "📈 您的專屬業績圖表已準備好：\n\n🔗 點擊下方連結查看：\nhttps://empirejames.github.io/line_store_booking/chart.html";
     } else if (userText.includes("報表")) {
       replyMsg = "📊 您的專屬商品銷售報表已準備好：\n\n🔗 點擊下方連結查看排行榜：\nhttps://empirejames.github.io/line_store_booking/report.html";
+    } else if (userText.toLowerCase().includes("excel")) {
+      replyMsg = "🔗 您的 Excel 營收記帳表連結如下：\nhttps://docs.google.com/spreadsheets/d/1Yw47QEBNeIO1IjeItZ6d0CmJBdnKGeGBzOTUHBUJEPA/edit?gid=1596698359#gid=1596698359";
     } else if (userText === "指令" || userText === "功能" || userText === "help") {
       replyMsg = "🤖 虛擬會計指令清單：\n\n"
         + "📌 「今日業績」— 查看今天的營收與差異值\n"
@@ -395,6 +397,7 @@ function handleLineWebhook(data) {
         + "📌 「圖表」— 查看本月的業績與午晚班圖表\n"
         + "📌 「查詢 [商品名]」— 查詢商品平均日銷量（如：查詢六月嫩雞）\n"
         + "📌 「報表」— 查看每個月的商品銷售排行榜\n"
+        + "📌 「excel」— 快速取得營收記帳表連結\n"
         + "📌 「指令」— 顯示此說明";
     } else if (isAskingSales) {
       // 如果句子包含問銷量的關鍵字，進入智慧比對模式
