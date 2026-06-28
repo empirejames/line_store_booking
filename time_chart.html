@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>時間點熱度分析</title>
+  <!-- 載入 Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 載入 Google Fonts -->
+  <link href="https://fonts.googleapis.css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --accent-primary: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.5);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+      color: var(--text-main);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+      margin-bottom: 30px;
+      padding-top: 20px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0 0 10px 0;
+      background: linear-gradient(to right, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .chart-container {
+      width: 100%;
+      max-width: 600px;
+      height: 400px; /* 給予明確高度 */
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .loading-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255,255,255,0.1);
+      border-left-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-msg {
+      color: #ef4444;
+      text-align: center;
+      margin-top: 20px;
+      font-weight: 600;
+    }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>客流熱度分佈</h1>
+    <p class="subtitle">各時段交易數量趨勢</p>
+  </header>
+
+  <div class="chart-container">
+    <div id="loading" class="loading-overlay">
+      <div class="spinner"></div>
+      <p style="margin-top: 15px; color: var(--text-muted); font-size: 14px;">資料載入中...</p>
+    </div>
+    <div id="error" class="error-msg" style="display: none;"></div>
+    <canvas id="timeChart"></canvas>
+  </div>
+
+  <script>
+    // 您的 Google Apps Script 網頁應用程式 URL
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCqGQ2jc__cqcYtfHUI-2PBRZFoHWALGkvVW8RAzJaQ6V2K3lJfIMMfZbi5TBVWfVM/exec';
+
+    async function fetchAndRenderChart() {
+      const loading = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+      
+      try {
+        const response = await fetch(`${GAS_URL}?action=getTimeDistribution`);
+        const result = await response.json();
+        
+        if (result.status === 'success' && result.data && result.data.length > 0) {
+          loading.style.display = 'none';
+          
+          // 準備資料
+          const labels = result.data.map(item => item.time);
+          const dataPoints = result.data.map(item => item.transactions);
+          
+          renderChart(labels, dataPoints);
+        } else {
+          loading.style.display = 'none';
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = '找不到交易資料或表格格式有誤。';
+        }
+      } catch (err) {
+        loading.style.display = 'none';
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = '網路連線失敗，請稍後再試。';
+        console.error(err);
+      }
+    }
+
+    function renderChart(labels, dataPoints) {
+      const ctx = document.getElementById('timeChart').getContext('2d');
+      
+      // 建立漸層背景 (圖表下方)
+      const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+      gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)'); // 藍色半透明
+      gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)'); // 透明
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '交易數量',
+            data: dataPoints,
+            borderColor: '#3b82f6',
+            backgroundColor: gradient,
+            borderWidth: 3,
+            pointBackgroundColor: '#0f172a',
+            pointBorderColor: '#60a5fa',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: true,
+            tension: 0.4 // 讓曲線平滑
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false, // 讓高度可以自適應
+          plugins: {
+            legend: {
+              display: false // 隱藏圖例
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              titleColor: '#94a3b8',
+              bodyColor: '#f8fafc',
+              borderColor: 'rgba(255,255,255,0.1)',
+              borderWidth: 1,
+              padding: 12,
+              displayColors: false,
+              callbacks: {
+                label: function(context) {
+                  return `交易量: ${context.parsed.y} 筆`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.05)',
+                drawBorder: false
+              },
+              ticks: {
+                color: '#94a3b8',
+                maxTicksLimit: 8, // 避免 X 軸太擠
+                maxRotation: 45,
+                minRotation: 0
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(255, 255, 255, 0.05)',
+                drawBorder: false
+              },
+              ticks: {
+                color: '#94a3b8',
+                stepSize: Math.ceil(Math.max(...dataPoints) / 5) || 1
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 啟動
+    fetchAndRenderChart();
+  </script>
+</body>
+</html>

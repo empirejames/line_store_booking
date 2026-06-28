@@ -384,6 +384,31 @@ function doGet(e) {
         prevMonth: prevMonthStr,
         data: result
       })).setMimeType(ContentService.MimeType.JSON);
+    } else if (action === 'getTimeDistribution') {
+      var timeSheetId = "1AL0rR0w1xObsWaN-iIKV0tpDHR5iihujiue-dtFSsuE";
+      var timeSs = SpreadsheetApp.openById(timeSheetId);
+      var sheet = timeSs.getSheets()[0]; // 讀取第一個工作表
+      
+      var data = sheet.getDataRange().getValues();
+      var timeData = [];
+      
+      // 從第二列開始讀取 (略過標題列)
+      for (var i = 1; i < data.length; i++) {
+        var timeStr = String(data[i][0]).trim(); // A欄: 時段
+        var transactions = Number(data[i][4]);   // E欄: 交易(索引為4)
+        
+        if (timeStr !== "" && !isNaN(transactions)) {
+          timeData.push({
+            time: timeStr,
+            transactions: transactions
+          });
+        }
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        data: timeData
+      })).setMimeType(ContentService.MimeType.JSON);
     }
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({status: "error", message: error.toString()})).setMimeType(ContentService.MimeType.JSON);
@@ -420,6 +445,8 @@ function handleLineWebhook(data) {
       replyMsg = "📈 您的專屬業績圖表已準備好：\n\n🔗 點擊下方連結查看：\nhttps://empirejames.github.io/line_store_booking/chart.html";
     } else if (userText.includes("報表")) {
       replyMsg = "📊 您的專屬商品銷售報表已準備好：\n\n🔗 點擊下方連結查看排行榜：\nhttps://empirejames.github.io/line_store_booking/report.html";
+    } else if (userText.includes("時間") || userText.includes("時段") || userText.includes("熱度")) {
+      replyMsg = "🔥 您的專屬「時間點熱度分析圖表」已準備好：\n\n🔗 點擊下方連結查看各時段客流量：\nhttps://empirejames.github.io/line_store_booking/time_chart.html";
     } else if (userText.toLowerCase().includes("excel")) {
       replyMsg = "🔗 您的 Excel 營收記帳表連結如下：\nhttps://docs.google.com/spreadsheets/d/1Yw47QEBNeIO1IjeItZ6d0CmJBdnKGeGBzOTUHBUJEPA/edit?gid=1596698359#gid=1596698359";
     } else if (userText === "指令" || userText === "功能" || userText === "help") {
@@ -427,8 +454,9 @@ function handleLineWebhook(data) {
         + "📌 「今日業績」— 查看今天的營收與差異值\n"
         + "📌 「本月總額」— 查看本月累積營收與日均業績\n"
         + "📌 「圖表」— 查看本月的業績與午晚班圖表\n"
-        + "📌 「查詢 [商品名]」— 查詢商品平均日銷量（如：查詢六月嫩雞）\n"
+        + "📌 「查詢 [商品名]」— 查詢商品平均日銷量\n"
         + "📌 「報表」— 查看每個月的商品銷售排行榜\n"
+        + "📌 「時間」— 查看各時間點的平均交易熱度\n"
         + "📌 「excel」— 快速取得營收記帳表連結\n"
         + "📌 「指令」— 顯示此說明";
     } else if (isAskingSales) {
