@@ -451,6 +451,26 @@ function handleLineWebhook(data) {
       replyMsg = "🔗 您的 Excel 營收記帳表連結如下：\nhttps://docs.google.com/spreadsheets/d/1Yw47QEBNeIO1IjeItZ6d0CmJBdnKGeGBzOTUHBUJEPA/edit?gid=1596698359#gid=1596698359";
     } else if (userText === "指令" || userText === "功能" || userText === "help") {
       replyMsg = getHelpFlexMessage();
+    } else if (userText === "如何查詢商品?") {
+      replyMsg = "💡 查詢商品說明：\n"
+               + "請輸入「月份 + 商品名」，例如：「六月好吃嫩雞飯」\n\n"
+               + "📌 支援的商品名稱列表：\n"
+               + "好吃嫩雞飯\n"
+               + "好吃烤雞飯\n"
+               + "雙蛋嫩雞飯\n"
+               + "雙倍嫩雞飯\n"
+               + "貢丸湯\n"
+               + "嫩烤雙拼飯\n"
+               + "嫩雞扒蛋飯\n"
+               + "蘿蔔湯\n"
+               + "荷包蛋\n"
+               + "燙青菜\n"
+               + "雞油飯\n"
+               + "嫩雞一份\n"
+               + "貢丸一顆\n"
+               + "烤雞一份\n"
+               + "白飯一碗\n"
+               + "菜飯";
     } else if (isAskingSales) {
       // 如果句子包含問銷量的關鍵字，進入智慧比對模式
       replyMsg = smartQueryProductSales(userText);
@@ -816,7 +836,7 @@ function getHelpFlexMessage() {
           ] },
           "footer": { "type": "box", "layout": "vertical", "spacing": "sm", "contents": [
             { "type": "button", "style": "primary", "height": "sm", "action": { "type": "message", "label": "取得 Excel 連結", "text": "excel" } },
-            { "type": "button", "style": "secondary", "height": "sm", "action": { "type": "message", "label": "如何查詢商品?", "text": "查詢六月嫩雞" } }
+            { "type": "button", "style": "secondary", "height": "sm", "action": { "type": "message", "label": "如何查詢商品?", "text": "如何查詢商品?" } }
           ] }
         }
       ]
