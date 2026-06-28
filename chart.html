@@ -70,6 +70,16 @@
     <div id="loadingMsg" class="loading">資料載入中，請稍候...</div>
     <div id="errorMsg" class="error">資料讀取失敗，請稍後再試。</div>
     
+    <!-- 銷量平均數值顯示區 (預設隱藏) -->
+    <div id="productSummary" style="display: none; text-align: center; margin-bottom: 15px;">
+        <div style="display: inline-block; background: rgba(0,85,255,0.05); border: 2px solid #0055ff; color: #0055ff; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin: 0 5px;">
+            🍗 嫩雞平均: <span id="tenderAvgDisplay" style="font-size: 16px;">0</span>
+        </div>
+        <div style="display: inline-block; background: rgba(0,185,0,0.05); border: 2px solid #00B900; color: #00B900; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin: 0 5px;">
+            🍗 烤雞平均: <span id="roastAvgDisplay" style="font-size: 16px;">0</span>
+        </div>
+    </div>
+
     <div class="chart-scroll-wrapper" id="chartWrapper" style="display: none;">
         <div class="chart-container" id="chartInner">
             <canvas id="revenueChart"></canvas>
@@ -249,6 +259,7 @@
         document.getElementById('tabProduct').classList.toggle('active', view === 'product');
         
         document.getElementById('weekSelector').style.display = (view === 'week') ? 'block' : 'none';
+        document.getElementById('productSummary').style.display = (view === 'product') ? 'block' : 'none';
         
         if (view === 'product') {
             document.getElementById('monthTitle').innerText = '🍗 商品銷量走勢圖';
@@ -359,6 +370,10 @@
         let avgTender = countTender > 0 ? Math.round(sumTender / countTender) : 0;
         let avgRoast = countRoast > 0 ? Math.round(sumRoast / countRoast) : 0;
 
+        // 更新上方的平均數值顯示
+        document.getElementById('tenderAvgDisplay').innerText = avgTender;
+        document.getElementById('roastAvgDisplay').innerText = avgRoast;
+
         let tenderAvgData = new Array(labelsToRender.length).fill(avgTender);
         let roastAvgData = new Array(labelsToRender.length).fill(avgRoast);
 
@@ -391,7 +406,7 @@
                     },
                     {
                         type: 'line',
-                        label: '嫩雞平均 (' + avgTender + ')',
+                        label: '嫩雞平均',
                         data: tenderAvgData,
                         borderColor: '#0055ff', // 明顯的藍色實線
                         borderWidth: 2.5,
@@ -403,7 +418,7 @@
                     },
                     {
                         type: 'line',
-                        label: '烤雞平均 (' + avgRoast + ')',
+                        label: '烤雞平均',
                         data: roastAvgData,
                         borderColor: '#00B900', // 明顯的綠色實線
                         borderWidth: 2.5,
