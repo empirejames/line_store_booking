@@ -61,7 +61,6 @@
     .chart-container {
       width: 100%;
       max-width: 600px;
-      height: 400px; /* 給予明確高度 */
       background: var(--card-bg);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
@@ -70,6 +69,18 @@
       padding: 20px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       position: relative;
+    }
+
+    .scrollable-wrapper {
+      width: 100%;
+      height: 70vh; /* 動態高度，可用滾動條 */
+      overflow-y: auto;
+      border-radius: 10px;
+    }
+    
+    .canvas-container {
+      position: relative;
+      width: 100%;
     }
 
     .loading-overlay {
@@ -119,7 +130,12 @@
       <p style="margin-top: 15px; color: var(--text-muted); font-size: 14px;">資料載入中...</p>
     </div>
     <div id="error" class="error-msg" style="display: none;"></div>
-    <canvas id="timeChart"></canvas>
+    
+    <div class="scrollable-wrapper">
+      <div id="canvasWrapper" class="canvas-container">
+        <canvas id="timeChart"></canvas>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -156,33 +172,32 @@
     }
 
     function renderChart(labels, dataPoints) {
+      // 根據資料筆數動態設定高度 (每筆資料給予 30px 空間，最少 400px)
+      const dynamicHeight = Math.max(400, labels.length * 30);
+      document.getElementById('canvasWrapper').style.height = dynamicHeight + 'px';
+
       const ctx = document.getElementById('timeChart').getContext('2d');
       
-      // 建立漸層背景 (圖表下方)
-      const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-      gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)'); // 藍色半透明
-      gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)'); // 透明
+      // 建立漸層背景 (由左至右)
+      const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+      gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+      gradient.addColorStop(1, 'rgba(59, 130, 246, 0.8)');
 
       new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels: labels,
           datasets: [{
             label: '交易數量',
             data: dataPoints,
-            borderColor: '#3b82f6',
             backgroundColor: gradient,
-            borderWidth: 3,
-            pointBackgroundColor: '#0f172a',
-            pointBorderColor: '#60a5fa',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            fill: true,
-            tension: 0.4 // 讓曲線平滑
+            borderRadius: 4,
+            borderWidth: 0,
+            barThickness: 15 // 長條粗細
           }]
         },
         options: {
+          indexAxis: 'y', // 翻轉成橫向長條圖
           responsive: true,
           maintainAspectRatio: false, // 讓高度可以自適應
           plugins: {
@@ -199,25 +214,13 @@
               displayColors: false,
               callbacks: {
                 label: function(context) {
-                  return `交易量: ${context.parsed.y} 筆`;
+                  return `交易量: ${context.parsed.x} 筆`;
                 }
               }
             }
           },
           scales: {
             x: {
-              grid: {
-                color: 'rgba(255, 255, 255, 0.05)',
-                drawBorder: false
-              },
-              ticks: {
-                color: '#94a3b8',
-                maxTicksLimit: 8, // 避免 X 軸太擠
-                maxRotation: 45,
-                minRotation: 0
-              }
-            },
-            y: {
               beginAtZero: true,
               grid: {
                 color: 'rgba(255, 255, 255, 0.05)',
@@ -226,6 +229,15 @@
               ticks: {
                 color: '#94a3b8',
                 stepSize: Math.ceil(Math.max(...dataPoints) / 5) || 1
+              }
+            },
+            y: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.05)',
+                drawBorder: false
+              },
+              ticks: {
+                color: '#94a3b8'
               }
             }
           }
