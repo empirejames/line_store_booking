@@ -463,6 +463,8 @@ function handleLineWebhook(data) {
       replyMsg = "🔗 您的 Excel 營收記帳表連結如下：\nhttps://docs.google.com/spreadsheets/d/1Yw47QEBNeIO1IjeItZ6d0CmJBdnKGeGBzOTUHBUJEPA/edit?gid=1596698359#gid=1596698359";
     } else if (userText === "外送" || userText === "外送系統") {
       replyMsg = "🛵 您的外送系統連結如下：\nhttps://line-deliver-helper.vercel.app/admin";
+    } else if (userText.toUpperCase() === "CRM" || userText === "客戶資料") {
+      replyMsg = "👥 您的客戶資料 (CRM) 連結如下：\nhttps://line-deliver-helper.vercel.app/admin/customers";
     } else if (userText === "指令" || userText === "功能" || userText === "help") {
       replyMsg = getHelpFlexMessage();
     } else if (userText === "如何查詢商品?") {
