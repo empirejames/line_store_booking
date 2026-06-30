@@ -582,6 +582,10 @@ function getMonthReport() {
     var bestDay = "";
     var bestDayRev = 0;
     
+    // 用來計算平均（排除週六）
+    var avgDaysCount = 0;
+    var avgTotalRevenue = 0;
+    
     for (var i = 1; i < data.length; i++) {
       var dailyTotal = Number(data[i][16]) || 0;
       var dailyExp   = Number(data[i][14]) || 0;
@@ -595,16 +599,24 @@ function getMonthReport() {
         totalDiffAll += dailyDiffA;
         daysCount++;
         
+        var bd = new Date(data[i][0]);
+        var dayOfWeek = bd.getDay();
+        var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+        
+        // 若不是星期六 (6)，才納入平均的計算
+        if (dayOfWeek !== 6) {
+          avgTotalRevenue += dailyTotal;
+          avgDaysCount++;
+        }
+        
         if (dailyTotal > bestDayRev) {
           bestDayRev = dailyTotal;
-          var bd = new Date(data[i][0]);
-          var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
-          bestDay = (bd.getMonth() + 1) + "/" + bd.getDate() + "(" + weekdays[bd.getDay()] + ")";
+          bestDay = (bd.getMonth() + 1) + "/" + bd.getDate() + "(" + weekdays[dayOfWeek] + ")";
         }
       }
     }
     
-    var average = daysCount > 0 ? Math.round(totalRevenue / daysCount) : 0;
+    var average = avgDaysCount > 0 ? Math.round(avgTotalRevenue / avgDaysCount) : 0;
     var netRevenue = totalRevenue - totalExpenses;
     
     var msg = "📊 " + sheetName + " 月報總覽\n"
@@ -614,7 +626,7 @@ function getMonthReport() {
       + "🏦 淨營收：$" + netRevenue.toLocaleString() + "\n"
       + "━━━━━━━━━━━━\n"
       + "📅 已營業天數：" + daysCount + " 天\n"
-      + "📈 日均業績：$" + average.toLocaleString() + "\n"
+      + "📈 日均業績(不含週六)：$" + average.toLocaleString() + "\n"
       + "━━━━━━━━━━━━\n"
       + "📊 累計午班差異：$" + totalDiffLunch.toLocaleString() + "\n"
       + "📊 累計全日差異：$" + totalDiffAll.toLocaleString() + "\n"
