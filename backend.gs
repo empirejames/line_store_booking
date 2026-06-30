@@ -448,8 +448,18 @@ function handleLineWebhook(data) {
     var salesKeywords = ["平均", "銷售", "銷量", "賣多少", "賣出", "多少份", "業績", "查詢"];
     var isAskingSales = salesKeywords.some(function(kw) { return userText.includes(kw); });
     
-    // 🔍 關鍵字辨識 (使用彈性比對)
-    if (userText === "今日業績" || userText === "今日" || (userText.includes("今日") && (userText.includes("業績") || userText.includes("營收")))) {
+    // 🔍 判斷特定月份業績戰報
+    var monthMatch = userText.match(/^(一|二|三|四|五|六|七|八|九|十|十一|十二|[1-9]|10|11|12)月業績(戰報)?$/);
+    
+    if (monthMatch) {
+      var monthStr = monthMatch[1];
+      var monthMapping = {
+        "一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6,
+        "七": 7, "八": 8, "九": 9, "十": 10, "十一": 11, "十二": 12
+      };
+      var targetMonth = monthMapping[monthStr] || parseInt(monthStr, 10);
+      replyMsg = getMonthReportFlex(targetMonth);
+    } else if (userText === "今日業績" || userText === "今日" || (userText.includes("今日") && (userText.includes("業績") || userText.includes("營收")))) {
       replyMsg = getTodayReport();
     } else if (userText === "本月總額" || userText === "本月" || ((userText.includes("本月") || userText.includes("這個月")) && (userText.includes("業績") || userText.includes("營收") || userText.includes("總額")))) {
       replyMsg = getMonthReport();
@@ -636,6 +646,183 @@ function getMonthReport() {
       + "🏆 最佳單日：" + bestDay + " $" + bestDayRev.toLocaleString();
     
     return msg;
+    
+  } catch (err) {
+    return "❌ 查詢失敗：" + err.toString();
+  }
+}
+
+// =============================================
+// 📊 查詢「特定月份」總額 (回傳 Flex Message)
+// =============================================
+function getMonthReportFlex(targetMonth) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var now = new Date();
+    var year = now.getFullYear();
+    var sheetName = year + "年" + targetMonth + "月";
+    var sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) return "⚠️ 找不到工作表「" + sheetName + "」。";
+    
+    var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return "⚠️ 「" + sheetName + "」目前還沒有任何資料。";
+    
+    var totalRevenue = 0;
+    var totalExpenses = 0;
+    var totalDiffLunch = 0;
+    var totalDiffAll = 0;
+    var daysCount = 0;
+    var bestDay = "";
+    var bestDayRev = 0;
+    
+    var avgDaysCount = 0;
+    var avgTotalRevenue = 0;
+    
+    for (var i = 1; i < data.length; i++) {
+      var dailyTotal = Number(data[i][16]) || 0;
+      var dailyExp   = Number(data[i][14]) || 0;
+      var dailyDiffL = Number(data[i][12]) || 0;
+      var dailyDiffA = Number(data[i][17]) || 0;
+      
+      if (dailyTotal > 0) {
+        totalRevenue += dailyTotal;
+        totalExpenses += dailyExp;
+        totalDiffLunch += dailyDiffL;
+        totalDiffAll += dailyDiffA;
+        daysCount++;
+        
+        var bd = new Date(data[i][0]);
+        var dayOfWeek = bd.getDay();
+        var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+        
+        if (dayOfWeek !== 6) {
+          avgTotalRevenue += dailyTotal;
+          avgDaysCount++;
+        }
+        
+        if (dailyTotal > bestDayRev) {
+          bestDayRev = dailyTotal;
+          bestDay = (bd.getMonth() + 1) + "/" + bd.getDate() + "(" + weekdays[dayOfWeek] + ")";
+        }
+      }
+    }
+    
+    var average = avgDaysCount > 0 ? Math.round(avgTotalRevenue / avgDaysCount) : 0;
+    var netRevenue = totalRevenue - totalExpenses;
+    
+    var flex = {
+      "type": "flex",
+      "altText": "📊 " + sheetName + " 業績戰報",
+      "contents": {
+        "type": "bubble",
+        "size": "mega",
+        "header": {
+          "type": "box",
+          "layout": "vertical",
+          "contents": [
+            {
+              "type": "text",
+              "text": sheetName + " 業績戰報",
+              "weight": "bold",
+              "color": "#ffffff",
+              "size": "xl"
+            }
+          ],
+          "backgroundColor": "#1DB446"
+        },
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "contents": [
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "contents": [
+                { "type": "text", "text": "💰 累積總營收", "size": "sm", "color": "#555555" },
+                { "type": "text", "text": "$" + totalRevenue.toLocaleString(), "size": "md", "color": "#111111", "align": "end", "weight": "bold" }
+              ]
+            },
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "margin": "md",
+              "contents": [
+                { "type": "text", "text": "💸 累積總支出", "size": "sm", "color": "#555555" },
+                { "type": "text", "text": "$" + totalExpenses.toLocaleString(), "size": "md", "color": "#111111", "align": "end" }
+              ]
+            },
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "margin": "md",
+              "contents": [
+                { "type": "text", "text": "🏦 淨營收", "size": "sm", "color": "#555555" },
+                { "type": "text", "text": "$" + netRevenue.toLocaleString(), "size": "md", "color": "#1DB446", "align": "end", "weight": "bold" }
+              ]
+            },
+            { "type": "separator", "margin": "lg" },
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "margin": "lg",
+              "contents": [
+                { "type": "text", "text": "📅 已營業天數", "size": "sm", "color": "#555555" },
+                { "type": "text", "text": daysCount + " 天", "size": "md", "color": "#111111", "align": "end" }
+              ]
+            },
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "margin": "md",
+              "contents": [
+                { "type": "text", "text": "📈 日均(不含週六)", "size": "sm", "color": "#555555", "flex": 2 },
+                { "type": "text", "text": "$" + average.toLocaleString(), "size": "md", "color": "#1DB446", "align": "end", "weight": "bold" }
+              ]
+            },
+            { "type": "separator", "margin": "lg" },
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "margin": "lg",
+              "contents": [
+                { "type": "text", "text": "📊 午班差異", "size": "sm", "color": "#555555" },
+                { "type": "text", "text": "$" + totalDiffLunch.toLocaleString(), "size": "md", "color": "#111111", "align": "end" }
+              ]
+            },
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "margin": "md",
+              "contents": [
+                { "type": "text", "text": "📊 全日差異", "size": "sm", "color": "#555555" },
+                { "type": "text", "text": "$" + totalDiffAll.toLocaleString(), "size": "md", "color": "#111111", "align": "end" }
+              ]
+            },
+            { "type": "separator", "margin": "lg" },
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "margin": "lg",
+              "contents": [
+                { "type": "text", "text": "🏆 最佳單日", "size": "sm", "color": "#555555" },
+                { "type": "text", "text": bestDay, "size": "sm", "color": "#111111", "align": "end" }
+              ]
+            },
+            {
+              "type": "box",
+              "layout": "horizontal",
+              "margin": "sm",
+              "contents": [
+                { "type": "text", "text": "最高營收", "size": "sm", "color": "#555555" },
+                { "type": "text", "text": "$" + bestDayRev.toLocaleString(), "size": "md", "color": "#E60000", "align": "end", "weight": "bold" }
+              ]
+            }
+          ]
+        }
+      }
+    };
+    return flex;
     
   } catch (err) {
     return "❌ 查詢失敗：" + err.toString();
