@@ -407,9 +407,23 @@ function doGet(e) {
         data: result
       })).setMimeType(ContentService.MimeType.JSON);
     } else if (action === 'getTimeDistribution') {
+      var targetMonthStr = e.parameter.month;
+      var monthMapping = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+      if (!targetMonthStr) {
+        var m = new Date().getMonth();
+        targetMonthStr = monthMapping[m] + "月";
+      }
+
       var timeSheetId = "1AL0rR0w1xObsWaN-iIKV0tpDHR5iihujiue-dtFSsuE";
       var timeSs = SpreadsheetApp.openById(timeSheetId);
-      var sheet = timeSs.getSheets()[0]; // 讀取第一個工作表
+      var sheet = timeSs.getSheetByName(targetMonthStr);
+      
+      if (!sheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "error",
+          message: "找不到名為「" + targetMonthStr + "」的工作表"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
       
       var data = sheet.getDataRange().getValues();
       var timeData = [];
