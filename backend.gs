@@ -230,14 +230,31 @@ function doGet(e) {
   try {
     var action = e.parameter.action;
     if (action === 'getAverage') {
+      var targetMonthStr = e.parameter.month;
       var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var d = new Date();
-      // 在台灣時區執行，也可以使用 Utilities.formatDate(new Date(), "GMT+8", "yyyy年M月")，但這裡簡單計算即可
-      // 注意：GAS 時區預設可能不同，最好強制轉為 GMT+8
       var formattedDate = Utilities.formatDate(new Date(), "GMT+8", "yyyy/M");
       var parts = formattedDate.split('/');
-      var sheetName = parts[0] + "年" + parts[1] + "月";
+      var year = parts[0];
+      var mNum = parts[1]; // default
+      
+      if (targetMonthStr) {
+        var monthMapping = { "一月":"1", "二月":"2", "三月":"3", "四月":"4", "五月":"5", "六月":"6", "七月":"7", "八月":"8", "九月":"9", "十月":"10", "十一月":"11", "十二月":"12" };
+        if (monthMapping[targetMonthStr]) {
+          mNum = monthMapping[targetMonthStr];
+        }
+      }
+      
+      var sheetName = year + "年" + mNum + "月";
       var sheet = ss.getSheetByName(sheetName);
+      
+      // 如果找不到工作表，可以提早結束或回傳錯誤
+      if (!sheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "error",
+          message: "找不到 " + sheetName + " 的資料",
+          month: mNum + "月"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
       
       var average = 0;
       var total = 0;

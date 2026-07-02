@@ -29,13 +29,43 @@
         .tabs { display: flex; background: #e0e0e0; border-radius: 10px; margin-bottom: 15px; overflow: hidden; padding: 4px; }
         .tab { flex: 1; text-align: center; padding: 10px 2px; font-weight: bold; font-size: 14px; color: #666; cursor: pointer; border-radius: 8px; transition: 0.3s; }
         .tab.active { background: white; color: #00B900; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        .month-selector {
+            background: #fff;
+            border: 1px solid #ddd;
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            cursor: pointer;
+            display: block;
+            margin: 10px auto 20px auto;
+            width: 100%;
+            max-width: 200px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1 id="monthTitle">📈 營收走勢圖</h1>
-    <p class="subtitle">本月全天候業績趨勢</p>
+    <p class="subtitle">各月全天候業績趨勢</p>
+    
+    <select class="month-selector" id="monthSelect">
+        <option value="一月">一月</option>
+        <option value="二月">二月</option>
+        <option value="三月">三月</option>
+        <option value="四月">四月</option>
+        <option value="五月">五月</option>
+        <option value="六月">六月</option>
+        <option value="七月">七月</option>
+        <option value="八月">八月</option>
+        <option value="九月">九月</option>
+        <option value="十月">十月</option>
+        <option value="十一月">十一月</option>
+        <option value="十二月">十二月</option>
+    </select>
     
     <!-- 天氣預報小工具 -->
     <div style="margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
@@ -108,11 +138,19 @@
     let weeksData = [];
     let chartInstance = null;
 
-    function fetchChartData() {
+    function fetchChartData(month) {
         document.getElementById('loadingMsg').style.display = 'block';
         document.getElementById('errorMsg').style.display = 'none';
+        document.getElementById('viewTabs').style.display = 'none';
+        document.getElementById('filterOptions').style.display = 'none';
+        document.getElementById('chartWrapper').style.display = 'none';
+        document.getElementById('productSummary').style.display = 'none';
         
-        fetch(GAS_URL + '?action=getAverage')
+        if (!month) {
+            month = document.getElementById('monthSelect').value;
+        }
+        
+        fetch(GAS_URL + '?action=getAverage&month=' + encodeURIComponent(month))
             .then(response => response.json())
             .then(data => {
                 document.getElementById('loadingMsg').style.display = 'none';
@@ -731,8 +769,16 @@
         });
     }
 
+    // 預設選取本月
+    const currentMonthNum = new Date().getMonth();
+    document.getElementById('monthSelect').selectedIndex = currentMonthNum;
+    
+    document.getElementById('monthSelect').addEventListener('change', (e) => {
+        fetchChartData(e.target.value);
+    });
+
     // 網頁載入後馬上抓資料
-    fetchChartData();
+    fetchChartData(document.getElementById('monthSelect').value);
 </script>
 
 </body>
