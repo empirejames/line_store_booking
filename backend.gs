@@ -255,9 +255,19 @@ function doGet(e) {
         var data = sheet.getDataRange().getValues();
         // 假設第一列是表頭，從第二列開始
         for (var i = 1; i < data.length; i++) {
-          var dateValue = new Date(data[i][0]); // 取得日期
-          var dayOfWeek = dateValue.getDay();   // 0=日, 1=一, 2=二, 3=三, 4=四, 5=五, 6=六
+          var cellDate = data[i][0]; // 取得日期
+          var dateValue;
+          if (cellDate instanceof Date) {
+            dateValue = cellDate;
+          } else {
+            var dStr = String(cellDate).trim();
+            if (dStr.indexOf('/') !== -1 && dStr.split('/').length === 2) {
+              dStr = parts[0] + "/" + dStr;
+            }
+            dateValue = new Date(dStr);
+          }
           
+          var dayOfWeek = dateValue.getDay();   // 0=日, 1=一, 2=二, 3=三, 4=四, 5=五, 6=六
           var dailyTotal = Number(data[i][16]); // 第17欄: 總業績 (index 16)
           
           // 圖表資料：每天都加入（包含假日，看整體趨勢）
@@ -605,13 +615,29 @@ function getMonthReport() {
       var dailyDiffA = Number(data[i][17]) || 0;
       
       if (dailyTotal > 0) {
+        var cellDate = data[i][0];
+        var bd;
+        if (cellDate instanceof Date) {
+          bd = cellDate;
+        } else {
+          var dStr = String(cellDate).trim();
+          if (dStr.indexOf('/') !== -1 && dStr.split('/').length === 2) {
+            dStr = parts[0] + "/" + dStr;
+          }
+          bd = new Date(dStr);
+        }
+        
+        // 過濾未來日期 (容許 1 天的緩衝)
+        if (bd.getTime() > now.getTime() + 86400000) {
+          continue;
+        }
+
         totalRevenue += dailyTotal;
         totalExpenses += dailyExp;
         totalDiffLunch += dailyDiffL;
         totalDiffAll += dailyDiffA;
         daysCount++;
         
-        var bd = new Date(data[i][0]);
         var dayOfWeek = bd.getDay();
         var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
         
@@ -686,13 +712,28 @@ function getMonthReportFlex(targetMonth) {
       var dailyDiffA = Number(data[i][17]) || 0;
       
       if (dailyTotal > 0) {
+        var cellDate = data[i][0];
+        var bd;
+        if (cellDate instanceof Date) {
+          bd = cellDate;
+        } else {
+          var dStr = String(cellDate).trim();
+          if (dStr.indexOf('/') !== -1 && dStr.split('/').length === 2) {
+            dStr = year + "/" + dStr;
+          }
+          bd = new Date(dStr);
+        }
+        
+        if (bd.getTime() > now.getTime() + 86400000) {
+          continue;
+        }
+
         totalRevenue += dailyTotal;
         totalExpenses += dailyExp;
         totalDiffLunch += dailyDiffL;
         totalDiffAll += dailyDiffA;
         daysCount++;
         
-        var bd = new Date(data[i][0]);
         var dayOfWeek = bd.getDay();
         var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
         
