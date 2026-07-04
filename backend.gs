@@ -118,37 +118,36 @@ function doPost(e) {
     if (shift === 'lunch') {
       // ==== 午班結帳邏輯 ====
       var revLunch = parseNum(data.revenueLunch);
-      var tenderLunch = parseNum(data.tenderLunch);
       var roastLunch = parseNum(data.roastLunch);
       var expLunch = parseNum(data.expensesLunch);
       
-      var estRevLunch = (tenderLunch * 2 * 130) + (roastLunch * 140);
+      // 午餐無法準確預估全盤，因為不再分開盤點嫩雞，故以烤雞預估或是直接記錄為空白
+      var estRevLunch = (roastLunch * 140);
       var diffLunch = revLunch - estRevLunch;
 
-      existingData[4] = tenderLunch;   // 嫩(午)
+      existingData[4] = "";            // 嫩(午) 取消使用
       existingData[6] = roastLunch;    // 烤(午)
-      existingData[10] = estRevLunch;  // 預估業績(午)
+      existingData[10] = estRevLunch;  // 預估業績(午) 僅以烤雞計算
       existingData[11] = revLunch;     // 業績(午)
       existingData[12] = diffLunch;    // 差異值(午)
       existingData[14] = expLunch;     // 支出(午/晚) -> 暫存午餐支出
       existingData[16] = revLunch;     // 總業績 -> 暫存午餐業績
       
-      summaryMsg = "午餐結算完成！\n預估: $" + estRevLunch + "\n實際: $" + revLunch + "\n差異: $" + diffLunch;
+      summaryMsg = "午餐結算完成！\n預估(僅烤雞): $" + estRevLunch + "\n實際: $" + revLunch + "\n差異: $" + diffLunch;
 
     } else if (shift === 'dinner') {
       // ==== 晚班結帳邏輯 ====
       var revDinner = parseNum(data.revenueDinner);
       var roastDinner = parseNum(data.roastDinner);
-      var tenderDinner = parseNum(data.tenderDinner);
+      var chickenUsed = parseNum(data.chickenUsed);
       var expDinner = parseNum(data.expensesDinner);
       
       // 讀取已經存在的「午班」資料來加總與計算
-      var tenderLunch = parseNum(existingData[4]);
       var roastLunch = parseNum(existingData[6]);
       var expLunch = parseNum(existingData[14]);
       var revLunch = parseNum(existingData[11]); 
 
-      var totalTenderUsed = tenderLunch + tenderDinner;
+      var totalTenderUsed = chickenUsed;
       var totalRoast = roastLunch + roastDinner;
       var totalExpenses = expLunch + expDinner;
       var totalRevenue = revLunch + revDinner;
@@ -158,7 +157,7 @@ function doPost(e) {
       existingData[1] = parseNum(data.yesterdayRemain) || "";    // 昨日剩
       existingData[2] = parseNum(data.addedTender) || "";        // 新增嫩
       existingData[3] = totalTenderUsed;                         // 今日用(午+晚)
-      existingData[5] = tenderDinner;                            // 嫩雞(晚)
+      existingData[5] = "";                                      // 嫩雞(晚) 取消分開記錄
       existingData[7] = roastDinner;                             // 烤(晚)
       existingData[8] = parseNum(data.limited) || "";            // 限定
       existingData[9] = parseNum(data.riceAmount) || "";         // 飯量(鍋)
