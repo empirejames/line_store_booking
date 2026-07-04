@@ -121,19 +121,16 @@ function doPost(e) {
       var roastLunch = parseNum(data.roastLunch);
       var expLunch = parseNum(data.expensesLunch);
       
-      // 午餐無法準確預估全盤，因為不再分開盤點嫩雞，故以烤雞預估或是直接記錄為空白
-      var estRevLunch = (roastLunch * 140);
-      var diffLunch = revLunch - estRevLunch;
-
+      // 午餐不計算預估業績與差異值，因為不盤點嫩雞
       existingData[4] = "";            // 嫩(午) 取消使用
       existingData[6] = roastLunch;    // 烤(午)
-      existingData[10] = estRevLunch;  // 預估業績(午) 僅以烤雞計算
+      existingData[10] = "";           // 預估業績(午) 取消使用
       existingData[11] = revLunch;     // 業績(午)
-      existingData[12] = diffLunch;    // 差異值(午)
+      existingData[12] = "";           // 差異值(午) 取消使用
       existingData[14] = expLunch;     // 支出(午/晚) -> 暫存午餐支出
       existingData[16] = revLunch;     // 總業績 -> 暫存午餐業績
       
-      summaryMsg = "午餐結算完成！\n預估(僅烤雞): $" + estRevLunch + "\n實際: $" + revLunch + "\n差異: $" + diffLunch;
+      summaryMsg = "午餐結算完成！\n實際業績: $" + revLunch;
 
     } else if (shift === 'dinner') {
       // ==== 晚班結帳邏輯 ====
@@ -174,7 +171,7 @@ function doPost(e) {
 
       existingData[17] = differenceTotal; // 差異值 (全日)
 
-      summaryMsg = "全日結算完成！\n總業績: $" + totalRevenue + "\n全日差異: $" + differenceTotal + "\n午班差異: $" + parseNum(existingData[12]);
+      summaryMsg = "全日結算完成！\n總業績: $" + totalRevenue + "\n全日差異: $" + differenceTotal;
     }
 
     // 處理備註欄位 (如果有填寫的話)
