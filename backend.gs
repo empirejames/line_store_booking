@@ -504,13 +504,13 @@ function handleLineWebhook(data) {
     } else if (userText === "本月總額" || userText === "本月" || ((userText.includes("本月") || userText.includes("這個月")) && (userText.includes("業績") || userText.includes("營收") || userText.includes("總額")))) {
       replyMsg = getMonthReport();
     } else if (userText.includes("圖表")) {
-      replyMsg = "📈 您的專屬業績圖表已準備好：\n\n🔗 點擊下方連結查看：\nhttps://empirejames.github.io/line_store_booking/chart.html";
+      replyMsg = "📈 您的專屬業績圖表已準備好：\n\n🔗 點擊下方連結查看：\nhttps://line-store-booking.vercel.app/chart.html";
     } else if (userText.includes("報表")) {
-      replyMsg = "📊 您的專屬商品銷售報表已準備好：\n\n🔗 點擊下方連結查看排行榜：\nhttps://empirejames.github.io/line_store_booking/report.html";
+      replyMsg = "📊 您的專屬商品銷售報表已準備好：\n\n🔗 點擊下方連結查看排行榜：\nhttps://line-store-booking.vercel.app/report.html";
     } else if (userText.includes("時間") || userText.includes("時段") || userText.includes("熱度")) {
-      replyMsg = "🔥 您的專屬「時間點熱度分析圖表」已準備好：\n\n🔗 點擊下方連結查看各時段客流量：\nhttps://empirejames.github.io/line_store_booking/time_chart.html";
+      replyMsg = "🔥 您的專屬「時間點熱度分析圖表」已準備好：\n\n🔗 點擊下方連結查看各時段客流量：\nhttps://line-store-booking.vercel.app/time_chart.html";
     } else if (userText.includes("分紅")) {
-      replyMsg = "💰 您的專屬「門市分紅計算機」已準備好：\n\n🔗 點擊下方連結即時試算：\nhttps://empirejames.github.io/line_store_booking/dividend.html";
+      replyMsg = "💰 您的專屬「門市分紅計算機」已準備好：\n\n🔗 點擊下方連結即時試算：\nhttps://line-store-booking.vercel.app/dividend.html";
     } else if (userText.toLowerCase().includes("excel")) {
       replyMsg = "🔗 您的 Excel 營收記帳表連結如下：\nhttps://docs.google.com/spreadsheets/d/1Yw47QEBNeIO1IjeItZ6d0CmJBdnKGeGBzOTUHBUJEPA/edit?gid=1596698359#gid=1596698359";
     } else if (userText === "外送" || userText === "外送系統") {
