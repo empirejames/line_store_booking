@@ -250,6 +250,7 @@ function doGet(e) {
       
       var average = 0;
       var total = 0;
+      var trueTotal = 0;
       var daysCount = 0;
       var chartLabels = [];
       var chartData = [];
@@ -288,6 +289,7 @@ function doGet(e) {
           
           // 圖表資料：每天都加入（包含假日，看整體趨勢）
           if (!isNaN(dailyTotal) && dailyTotal > 0) {
+             trueTotal += dailyTotal; // 全月總業績
              var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
              var dayStr = (dateValue.getMonth() + 1) + "/" + dateValue.getDate() + "(" + weekdays[dayOfWeek] + ")";
              chartLabels.push(dayStr);
@@ -332,6 +334,7 @@ function doGet(e) {
         status: "success",
         month: sheetName,
         total: total,
+        trueTotal: trueTotal,
         days: daysCount,
         average: average,
         chartLabels: chartLabels,
@@ -509,7 +512,7 @@ function handleLineWebhook(data) {
       replyMsg = "📊 您的專屬商品銷售報表已準備好：\n\n🔗 點擊下方連結查看排行榜：\nhttps://line-store-booking.vercel.app/report.html";
     } else if (userText.includes("時間") || userText.includes("時段") || userText.includes("熱度")) {
       replyMsg = "🔥 您的專屬「時間點熱度分析圖表」已準備好：\n\n🔗 點擊下方連結查看各時段客流量：\nhttps://line-store-booking.vercel.app/time_chart.html";
-    } else if (userText.includes("分紅") || userText.includes("營收計算")) {
+    } else if (userText.includes("分紅") || userText.includes("營收計算") || userText.includes("分紅計算")) {
       replyMsg = "💰 您的專屬「門市分紅計算機」已準備好：\n\n🔗 點擊下方連結即時試算：\nhttps://line-store-booking.vercel.app/dividend.html";
     } else if (userText.toLowerCase().includes("excel")) {
       replyMsg = "🔗 您的 Excel 營收記帳表連結如下：\nhttps://docs.google.com/spreadsheets/d/1Yw47QEBNeIO1IjeItZ6d0CmJBdnKGeGBzOTUHBUJEPA/edit?gid=1596698359#gid=1596698359";

@@ -323,6 +323,26 @@
         <p>即時試算純利與淨利率</p>
     </div>
 
+    <!-- 月份選擇 -->
+    <div class="input-group" style="margin-bottom: 24px;">
+        <label for="monthSelect" style="display: block; margin-bottom: 8px;">📊 選擇月份自動載入營收</label>
+        <select id="monthSelect" style="width: 100%; padding: 12px; font-size: 16px; border-radius: 12px; border: 2px solid #e2e8f0; background: #fff; outline: none; color: var(--text-main); font-weight: bold; cursor: pointer;">
+            <option value="一月">一月</option>
+            <option value="二月">二月</option>
+            <option value="三月">三月</option>
+            <option value="四月">四月</option>
+            <option value="五月">五月</option>
+            <option value="六月">六月</option>
+            <option value="七月">七月</option>
+            <option value="八月">八月</option>
+            <option value="九月">九月</option>
+            <option value="十月">十月</option>
+            <option value="十一月">十一月</option>
+            <option value="十二月">十二月</option>
+        </select>
+        <p id="loadingText" style="display:none; color: var(--info); font-size: 13px; margin-top: 8px; text-align: center; font-weight: bold;">資料同步中...</p>
+    </div>
+
     <!-- 總營收輸入 -->
     <div class="input-group">
         <label for="revenue">本月總營收 (元)</label>
@@ -449,7 +469,11 @@
 </div>
 
 <script>
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCqGQ2jc__cqcYtfHUI-2PBRZFoHWALGkvVW8RAzJaQ6V2K3lJfIMMfZbi5TBVWfVM/exec';
+    
     const revenueInput = document.getElementById('revenue');
+    const monthSelect = document.getElementById('monthSelect');
+    const loadingText = document.getElementById('loadingText');
     
     // Sliders
     const costSlider = document.getElementById('costRatio');
@@ -602,8 +626,37 @@
         }
     }
 
-    // 初始載入時，以細項的預設值為基準來計算一次
+    // 取得 Google Sheets 總業績
+    function fetchMonthlyRevenue(month) {
+        loadingText.style.display = 'block';
+        fetch(GAS_URL + '?action=getAverage&month=' + encodeURIComponent(month))
+            .then(res => res.json())
+            .then(data => {
+                loadingText.style.display = 'none';
+                if (data && data.status === 'success' && data.trueTotal) {
+                    revenueInput.value = data.trueTotal;
+                    calculateFromDetails();
+                }
+            })
+            .catch(err => {
+                loadingText.style.display = 'none';
+                console.error('Error fetching revenue:', err);
+            });
+    }
+
+    monthSelect.addEventListener('change', (e) => {
+        fetchMonthlyRevenue(e.target.value);
+    });
+
+    // 初始載入時
+    const currentMonthNum = new Date().getMonth();
+    monthSelect.selectedIndex = currentMonthNum;
+    
+    // 先以細項的預設值為基準來計算一次，避免畫面空白
     calculateFromDetails();
+    
+    // 然後去抓真正的總業績
+    fetchMonthlyRevenue(monthSelect.value);
 </script>
 
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
