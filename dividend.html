@@ -1,0 +1,379 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>💰 門市分紅計算機</title>
+    <style>
+        :root {
+            --primary: #00B900;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #888888;
+            --border-radius: 16px;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            --danger: #ff4d4f;
+            --warning: #faad14;
+            --info: #1890ff;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang TC', '微軟正黑體', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .calculator-card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            box-sizing: border-box;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .header p {
+            margin: 8px 0 0 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 15px;
+            color: #555;
+        }
+
+        .value-display {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .revenue-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .revenue-input-wrapper span {
+            position: absolute;
+            left: 16px;
+            font-size: 18px;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 14px 14px 14px 36px;
+            font-size: 20px;
+            font-weight: bold;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.3s ease;
+            color: var(--text-main);
+            background: #f8fafc;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(0, 185, 0, 0.1);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            outline: none;
+            margin-top: 10px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.15);
+        }
+
+        .results-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            font-size: 15px;
+            color: #64748b;
+        }
+        
+        .result-row.deduction {
+            color: var(--danger);
+        }
+
+        .result-row.royalty {
+            color: var(--warning);
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 16px;
+            margin-bottom: 8px;
+        }
+
+        .result-row .amount {
+            font-weight: 600;
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        .final-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .final-result .label {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .final-result .label span {
+            display: block;
+            font-size: 13px;
+            color: var(--primary);
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .final-result .amount {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            text-align: right;
+        }
+
+        .btn-back {
+            display: block;
+            width: 100%;
+            background-color: #f1f5f9;
+            color: #475569;
+            text-align: center;
+            text-decoration: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 12px;
+            margin-top: 24px;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-back:active {
+            background-color: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-card">
+    <div class="header">
+        <h1>💰 門市分紅計算機</h1>
+        <p>即時試算純利與淨利率</p>
+    </div>
+
+    <!-- 總營收輸入 -->
+    <div class="input-group">
+        <label for="revenue">本月總營收 (元)</label>
+        <div class="revenue-input-wrapper">
+            <span>$</span>
+            <input type="number" id="revenue" value="1197325" inputmode="numeric" placeholder="請輸入總營收">
+        </div>
+    </div>
+
+    <!-- 食材成本 % -->
+    <div class="input-group">
+        <label>
+            食材成本 %
+            <span class="value-display" id="costRatioDisplay">36.61%</span>
+        </label>
+        <input type="range" id="costRatio" min="0" max="100" step="0.01" value="36.61">
+    </div>
+
+    <!-- 營運費用 % -->
+    <div class="input-group">
+        <label>
+            營運費用 %
+            <span class="value-display" id="expenseRatioDisplay">40.00%</span>
+        </label>
+        <input type="range" id="expenseRatio" min="0" max="100" step="0.01" value="40.00">
+    </div>
+
+    <!-- 加盟抽成 % -->
+    <div class="input-group">
+        <label>
+            加盟抽成 %
+            <span class="value-display" id="royaltyRatioDisplay">3.00%</span>
+        </label>
+        <input type="range" id="royaltyRatio" min="0" max="15" step="0.01" value="3.00">
+    </div>
+
+    <!-- 計算結果 -->
+    <div class="results-card">
+        <div class="result-row">
+            <span>總營收</span>
+            <span class="amount" id="resRevenue"></span>
+        </div>
+        <div class="result-row deduction">
+            <span>- 食材成本</span>
+            <span class="amount" id="resCost">-</span>
+        </div>
+        <div class="result-row deduction">
+            <span>- 營運費用</span>
+            <span class="amount" id="resExpense">-</span>
+        </div>
+        <div class="result-row deduction royalty">
+            <span>- 加盟抽成</span>
+            <span class="amount" id="resRoyalty">-</span>
+        </div>
+
+        <div class="final-result">
+            <div class="label">
+                最終純利 (分紅)
+                <span id="resMargin">淨利率：0.00%</span>
+            </div>
+            <div class="amount" id="resProfit"></div>
+        </div>
+    </div>
+
+    <button class="btn-back" onclick="closeWindow()">關閉視窗</button>
+</div>
+
+<script>
+    const revenueInput = document.getElementById('revenue');
+    const costSlider = document.getElementById('costRatio');
+    const expenseSlider = document.getElementById('expenseRatio');
+    const royaltySlider = document.getElementById('royaltyRatio');
+    
+    const costDisplay = document.getElementById('costRatioDisplay');
+    const expenseDisplay = document.getElementById('expenseRatioDisplay');
+    const royaltyDisplay = document.getElementById('royaltyRatioDisplay');
+    
+    const resRevenue = document.getElementById('resRevenue');
+    const resCost = document.getElementById('resCost');
+    const resExpense = document.getElementById('resExpense');
+    const resRoyalty = document.getElementById('resRoyalty');
+    const resProfit = document.getElementById('resProfit');
+    const resMargin = document.getElementById('resMargin');
+
+    function formatMoney(num) {
+        return '$' + Math.round(num).toLocaleString('en-US');
+    }
+
+    function calculate() {
+        const revenue = parseFloat(revenueInput.value) || 0;
+        const costRatio = parseFloat(costSlider.value);
+        const expenseRatio = parseFloat(expenseSlider.value);
+        const royaltyRatio = parseFloat(royaltySlider.value);
+
+        // Update displays
+        costDisplay.textContent = costRatio.toFixed(2) + '%';
+        expenseDisplay.textContent = expenseRatio.toFixed(2) + '%';
+        royaltyDisplay.textContent = royaltyRatio.toFixed(2) + '%';
+
+        // Calculation logic (based on reference function)
+        const royaltyAmount = revenue * (royaltyRatio / 100);
+        const costAmount = revenue * (costRatio / 100);
+        const expenseAmount = revenue * (expenseRatio / 100);
+
+        const totalExpense = costAmount + expenseAmount + royaltyAmount;
+        const netProfit = revenue - totalExpense;
+        const netMargin = revenue > 0 ? ((netProfit / revenue) * 100) : 0;
+
+        // Render results
+        resRevenue.textContent = formatMoney(revenue);
+        resCost.textContent = '-' + formatMoney(costAmount);
+        resExpense.textContent = '-' + formatMoney(expenseAmount);
+        resRoyalty.textContent = '-' + formatMoney(royaltyAmount);
+        
+        resProfit.textContent = formatMoney(netProfit);
+        resMargin.textContent = '淨利率：' + netMargin.toFixed(2) + '%';
+    }
+
+    revenueInput.addEventListener('input', calculate);
+    costSlider.addEventListener('input', calculate);
+    expenseSlider.addEventListener('input', calculate);
+    royaltySlider.addEventListener('input', calculate);
+
+    function closeWindow() {
+        if (typeof liff !== 'undefined' && liff.isInClient()) {
+            liff.closeWindow();
+        } else {
+            window.close();
+        }
+    }
+
+    calculate();
+</script>
+
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+</body>
+</html>

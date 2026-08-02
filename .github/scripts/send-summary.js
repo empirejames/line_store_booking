@@ -164,26 +164,7 @@ async function run() {
                       color: "#555555",
                       weight: "bold"
                     },
-                    {
-                      type: "box",
-                      layout: "horizontal",
-                      contents: [
-                        {
-                          type: "text",
-                          text: "午班差異",
-                          size: "sm",
-                          color: "#888888"
-                        },
-                        {
-                          type: "text",
-                          text: `$${(result.todayLunchDiff || 0).toLocaleString()}`,
-                          size: "sm",
-                          color: (result.todayLunchDiff || 0) < 0 ? "#FF3B30" : "#00B900",
-                          align: "end",
-                          weight: "bold"
-                        }
-                      ]
-                    },
+
                     {
                       type: "box",
                       layout: "horizontal",

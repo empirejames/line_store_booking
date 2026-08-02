@@ -32,10 +32,10 @@ function doPost(e) {
     if (!sheet) {
       // 找不到就建立新的工作表
       sheet = ss.insertSheet(sheetName);
-      // 自動補上表頭 (新版 19 欄)
+      // 自動補上表頭 (新版 15 欄)
       var headers = [
-        "日期", "昨日剩", "新增嫩", "今日用", "嫩(午)", "嫩雞(晚)", "烤(午)", "烤(晚)", "限定(份)", "飯量(鍋)", 
-        "預估業績(午)", "業績(午)", "差異值(午)", "業績(晚)", "支出(午/晚)", "匯款業績", "總業績", "差異值", "備註"
+        "日期", "昨日剩", "新增嫩", "今日用", "烤(午)", "烤(晚)", "限定(份)", "飯量(鍋)", 
+        "業績(午)", "業績(晚)", "支出(午/晚)", "匯款業績", "總業績", "差異值", "備註"
       ];
       sheet.appendRow(headers);
       sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#d9ead3");
@@ -104,9 +104,9 @@ function doPost(e) {
       }
     }
 
-    // 若找不到今日資料，預設一個長度為 19 的空陣列 (新增備註欄)
+    // 若找不到今日資料，預設一個長度為 15 的空陣列 (已刪除 4 個未使用欄位)
     if (targetRowIndex === -1) {
-      existingData = new Array(19).fill(""); 
+      existingData = new Array(15).fill(""); 
       existingData[0] = dateStr;
     }
 
@@ -122,13 +122,10 @@ function doPost(e) {
       var expLunch = parseNum(data.expensesLunch);
       
       // 午餐不計算預估業績與差異值，因為不盤點嫩雞
-      existingData[4] = "";            // 嫩(午) 取消使用
-      existingData[6] = roastLunch;    // 烤(午)
-      existingData[10] = "";           // 預估業績(午) 取消使用
-      existingData[11] = revLunch;     // 業績(午)
-      existingData[12] = "";           // 差異值(午) 取消使用
-      existingData[14] = expLunch;     // 支出(午/晚) -> 暫存午餐支出
-      existingData[16] = revLunch;     // 總業績 -> 暫存午餐業績
+      existingData[4] = roastLunch;    // 烤(午) (原本為 6)
+      existingData[8] = revLunch;      // 業績(午) (原本為 11)
+      existingData[10] = expLunch;     // 支出(午/晚) -> 暫存午餐支出 (原本為 14)
+      existingData[12] = revLunch;     // 總業績 -> 暫存午餐業績 (原本為 16)
       
       summaryMsg = "午餐結算完成！\n實際業績: $" + revLunch;
 
@@ -140,9 +137,9 @@ function doPost(e) {
       var expDinner = parseNum(data.expensesDinner);
       
       // 讀取已經存在的「午班」資料來加總與計算
-      var roastLunch = parseNum(existingData[6]);
-      var expLunch = parseNum(existingData[14]);
-      var revLunch = parseNum(existingData[11]); 
+      var roastLunch = parseNum(existingData[4]);
+      var expLunch = parseNum(existingData[10]);
+      var revLunch = parseNum(existingData[8]); 
 
       var totalTenderUsed = chickenUsed;
       var totalRoast = roastLunch + roastDinner;
@@ -154,22 +151,21 @@ function doPost(e) {
       existingData[1] = parseNum(data.yesterdayRemain) || "";    // 昨日剩
       existingData[2] = parseNum(data.addedTender) || "";        // 新增嫩
       existingData[3] = totalTenderUsed;                         // 今日用(午+晚)
-      existingData[5] = "";                                      // 嫩雞(晚) 取消分開記錄
-      existingData[7] = roastDinner;                             // 烤(晚)
-      existingData[8] = parseNum(data.limited) || "";            // 限定
-      existingData[9] = parseNum(data.riceAmount) || "";         // 飯量(鍋)
-      existingData[13] = revDinner;                              // 業績(晚)
+      existingData[5] = roastDinner;                             // 烤(晚)
+      existingData[6] = parseNum(data.limited) || "";            // 限定
+      existingData[7] = parseNum(data.riceAmount) || "";         // 飯量(鍋)
+      existingData[9] = revDinner;                               // 業績(晚)
       
       // 🔄 更新共用加總欄位
-      existingData[14] = totalExpenses; // 支出(午/晚)
-      existingData[15] = remittance;    // 匯款業績
-      existingData[16] = totalRevenue;  // 總業績
+      existingData[10] = totalExpenses; // 支出(午/晚)
+      existingData[11] = remittance;    // 匯款業績
+      existingData[12] = totalRevenue;  // 總業績
 
       // 全日預估業績與差異值
       var estimatedRevenueTotal = (totalTenderUsed * 2 * 130) + (totalRoast * 140);
       var differenceTotal = totalRevenue - estimatedRevenueTotal;
 
-      existingData[17] = differenceTotal; // 差異值 (全日)
+      existingData[13] = differenceTotal; // 差異值 (全日)
 
       summaryMsg = "全日結算完成！\n總業績: $" + totalRevenue + "\n全日差異: $" + differenceTotal;
     }
@@ -178,14 +174,14 @@ function doPost(e) {
     if (data.notes && data.notes.trim() !== "") {
       var shiftName = shift === 'lunch' ? "[午班]" : "[晚班]";
       var newNote = shiftName + " " + data.notes.trim();
-      if (existingData[18] && existingData[18].trim() !== "") {
+      if (existingData[14] && existingData[14].trim() !== "") {
         // 若已經有備註，則換行附加
         // 避免重複寫入同一班的相同備註 (簡單防呆)
-        if (!existingData[18].includes(newNote)) {
-            existingData[18] = existingData[18] + "\n" + newNote;
+        if (!existingData[14].includes(newNote)) {
+            existingData[14] = existingData[14] + "\n" + newNote;
         }
       } else {
-        existingData[18] = newNote;
+        existingData[14] = newNote;
       }
     }
 
@@ -281,7 +277,14 @@ function doGet(e) {
           }
           
           var dayOfWeek = dateValue.getDay();   // 0=日, 1=一, 2=二, 3=三, 4=四, 5=五, 6=六
-          var dailyTotal = Number(data[i][16]); // 第17欄: 總業績 (index 16)
+          
+          var isOldLayout = data[i].length >= 18;
+          var totalCol = isOldLayout ? 16 : 12;
+          var roastLunchCol = isOldLayout ? 6 : 4;
+          var roastDinnerCol = isOldLayout ? 7 : 5;
+          var diffAllCol = isOldLayout ? 17 : 13;
+
+          var dailyTotal = Number(data[i][totalCol]); // 總業績
           
           // 圖表資料：每天都加入（包含假日，看整體趨勢）
           if (!isNaN(dailyTotal) && dailyTotal > 0) {
@@ -294,8 +297,8 @@ function doGet(e) {
              var tenderQty = Number(data[i][3]) || 0;
              chartTenderData.push(tenderQty);
              
-             // 抓取烤雞今日用 = 午班(index 6) + 晚班(index 7)
-             var roastQty = (Number(data[i][6]) || 0) + (Number(data[i][7]) || 0);
+             // 抓取烤雞今日用
+             var roastQty = (Number(data[i][roastLunchCol]) || 0) + (Number(data[i][roastDinnerCol]) || 0);
              chartRoastData.push(roastQty);
           }
           
@@ -319,9 +322,9 @@ function doGet(e) {
             var dd = lastDate.getDate();
             var weekdays = ["日", "一", "二", "三", "四", "五", "六"];
             todayDateStr = mm + "/" + dd + "(" + weekdays[lastDate.getDay()] + ")";
-            
-            todayLunchDiff = Number(lastRow[12]) || 0;
-            todayTotalDiff = Number(lastRow[17]) || 0;
+            var isOldLayout = lastRow.length >= 18;
+            var diffAllCol = isOldLayout ? 17 : 13;
+            todayTotalDiff = Number(lastRow[diffAllCol]) || 0;
         }
       }
 
@@ -336,7 +339,6 @@ function doGet(e) {
         chartTenderData: chartTenderData,
         chartRoastData: chartRoastData,
         todayDateStr: todayDateStr,
-        todayLunchDiff: todayLunchDiff,
         todayTotalDiff: todayTotalDiff
       })).setMimeType(ContentService.MimeType.JSON);
     } else if (action === 'getAllProductSales') {
@@ -388,10 +390,11 @@ function doGet(e) {
       var data = sheet.getDataRange().getValues();
       var salesDict = {};
       
-      // A欄(0)商品名, G欄(6)銷售數量
       for (var i = 1; i < data.length; i++) {
-        var productName = String(data[i][0]).trim();
-        var sales = Number(data[i][6]);
+        var isOldLayout = data[i].length >= 18;
+        var limitCol = isOldLayout ? 8 : 6;
+        var productName = String(data[i][0]).trim(); // A欄: 項目
+        var sales = Number(data[i][limitCol]);       // 限定商品銷售量
         
         if (productName !== "" && !isNaN(sales) && sales > 0) {
           if (!salesDict[productName]) {
@@ -506,12 +509,14 @@ function handleLineWebhook(data) {
       replyMsg = "📊 您的專屬商品銷售報表已準備好：\n\n🔗 點擊下方連結查看排行榜：\nhttps://empirejames.github.io/line_store_booking/report.html";
     } else if (userText.includes("時間") || userText.includes("時段") || userText.includes("熱度")) {
       replyMsg = "🔥 您的專屬「時間點熱度分析圖表」已準備好：\n\n🔗 點擊下方連結查看各時段客流量：\nhttps://empirejames.github.io/line_store_booking/time_chart.html";
+    } else if (userText.includes("分紅")) {
+      replyMsg = "💰 您的專屬「門市分紅計算機」已準備好：\n\n🔗 點擊下方連結即時試算：\nhttps://empirejames.github.io/line_store_booking/dividend.html";
     } else if (userText.toLowerCase().includes("excel")) {
       replyMsg = "🔗 您的 Excel 營收記帳表連結如下：\nhttps://docs.google.com/spreadsheets/d/1Yw47QEBNeIO1IjeItZ6d0CmJBdnKGeGBzOTUHBUJEPA/edit?gid=1596698359#gid=1596698359";
     } else if (userText === "外送" || userText === "外送系統") {
-      replyMsg = "🛵 您的外送系統連結如下：\nhttps://line-deliver-helper.vercel.app/admin";
+      replyMsg = "🛵 您的外送系統連結如下：\nhttps://line-deliver-helper.vercel.app/store_wugu/admin";
     } else if (userText.toUpperCase() === "CRM" || userText === "客戶資料") {
-      replyMsg = "👥 您的客戶資料 (CRM) 連結如下：\nhttps://line-deliver-helper.vercel.app/admin/customers";
+      replyMsg = "👥 您的客戶資料 (CRM) 連結如下：\nhttps://line-deliver-helper.vercel.app/store_wugu/admin/customers";
     } else if (userText === "指令" || userText === "功能" || userText === "help") {
       replyMsg = getHelpFlexMessage();
     } else if (userText === "如何查詢商品?") {
@@ -575,14 +580,22 @@ function getTodayReport() {
     var dd = lastDate.getDate();
     var dayName = weekdays[lastDate.getDay()];
     
-    var revLunch    = Number(lastRow[11]) || 0;  // 業績(午)
-    var revDinner   = Number(lastRow[13]) || 0;  // 業績(晚)
-    var totalRev    = Number(lastRow[16]) || 0;  // 總業績
-    var diffLunch   = Number(lastRow[12]) || 0;  // 差異值(午)
-    var diffTotal   = Number(lastRow[17]) || 0;  // 差異值
-    var expenses    = Number(lastRow[14]) || 0;  // 支出
-    var remittance  = Number(lastRow[15]) || 0;  // 匯款業績
-    var notes       = lastRow[18] || "";         // 備註
+    var isOldLayout = lastRow.length >= 18;
+    var revLunchCol   = isOldLayout ? 11 : 8;
+    var revDinnerCol  = isOldLayout ? 13 : 9;
+    var expCol        = isOldLayout ? 14 : 10;
+    var remitCol      = isOldLayout ? 15 : 11;
+    var totalCol      = isOldLayout ? 16 : 12;
+    var diffTotalCol  = isOldLayout ? 17 : 13;
+    var notesCol      = isOldLayout ? 18 : 14;
+
+    var revLunch    = Number(lastRow[revLunchCol]) || 0;  // 業績(午)
+    var revDinner   = Number(lastRow[revDinnerCol]) || 0; // 業績(晚)
+    var totalRev    = Number(lastRow[totalCol]) || 0;     // 總業績
+    var diffTotal   = Number(lastRow[diffTotalCol]) || 0; // 差異值
+    var expenses    = Number(lastRow[expCol]) || 0;       // 支出
+    var remittance  = Number(lastRow[remitCol]) || 0;     // 匯款業績
+    var notes       = lastRow[notesCol] || "";            // 備註
     
     var msg = "📊 " + mm + "/" + dd + "(" + dayName + ") 即時戰報\n"
       + "━━━━━━━━━━━━\n"
@@ -590,7 +603,6 @@ function getTodayReport() {
       + "🌙 晚班業績：$" + revDinner.toLocaleString() + "\n"
       + "💰 全日總額：$" + totalRev.toLocaleString() + "\n"
       + "━━━━━━━━━━━━\n"
-      + "📈 午班差異：$" + diffLunch.toLocaleString() + "\n"
       + "📈 全日差異：$" + diffTotal.toLocaleString() + "\n"
       + "💸 總支出：$" + expenses.toLocaleString() + "\n"
       + "🏦 匯款業績：$" + remittance.toLocaleString();
@@ -625,7 +637,6 @@ function getMonthReport() {
     
     var totalRevenue = 0;
     var totalExpenses = 0;
-    var totalDiffLunch = 0;
     var totalDiffAll = 0;
     var daysCount = 0;
     var bestDay = "";
@@ -636,10 +647,14 @@ function getMonthReport() {
     var avgTotalRevenue = 0;
     
     for (var i = 1; i < data.length; i++) {
-      var dailyTotal = Number(data[i][16]) || 0;
-      var dailyExp   = Number(data[i][14]) || 0;
-      var dailyDiffL = Number(data[i][12]) || 0;
-      var dailyDiffA = Number(data[i][17]) || 0;
+      var isOldLayout = data[i].length >= 18;
+      var totalCol = isOldLayout ? 16 : 12;
+      var expCol = isOldLayout ? 14 : 10;
+      var diffAllCol = isOldLayout ? 17 : 13;
+
+      var dailyTotal = Number(data[i][totalCol]) || 0;
+      var dailyExp   = Number(data[i][expCol]) || 0;
+      var dailyDiffA = Number(data[i][diffAllCol]) || 0;
       
       if (dailyTotal > 0) {
         var cellDate = data[i][0];
@@ -693,7 +708,6 @@ function getMonthReport() {
       + "📅 已營業天數：" + daysCount + " 天\n"
       + "📈 日均業績(不含週六)：$" + average.toLocaleString() + "\n"
       + "━━━━━━━━━━━━\n"
-      + "📊 累計午班差異：$" + totalDiffLunch.toLocaleString() + "\n"
       + "📊 累計全日差異：$" + totalDiffAll.toLocaleString() + "\n"
       + "━━━━━━━━━━━━\n"
       + "🏆 最佳單日：" + bestDay + " $" + bestDayRev.toLocaleString();
@@ -723,7 +737,6 @@ function getMonthReportFlex(targetMonth) {
     
     var totalRevenue = 0;
     var totalExpenses = 0;
-    var totalDiffLunch = 0;
     var totalDiffAll = 0;
     var daysCount = 0;
     var bestDay = "";
@@ -733,10 +746,14 @@ function getMonthReportFlex(targetMonth) {
     var avgTotalRevenue = 0;
     
     for (var i = 1; i < data.length; i++) {
-      var dailyTotal = Number(data[i][16]) || 0;
-      var dailyExp   = Number(data[i][14]) || 0;
-      var dailyDiffL = Number(data[i][12]) || 0;
-      var dailyDiffA = Number(data[i][17]) || 0;
+      var isOldLayout = data[i].length >= 18;
+      var totalCol = isOldLayout ? 16 : 12;
+      var expCol = isOldLayout ? 14 : 10;
+      var diffAllCol = isOldLayout ? 17 : 13;
+
+      var dailyTotal = Number(data[i][totalCol]) || 0;
+      var dailyExp   = Number(data[i][expCol]) || 0;
+      var dailyDiffA = Number(data[i][diffAllCol]) || 0;
       
       if (dailyTotal > 0) {
         var cellDate = data[i][0];
@@ -757,7 +774,6 @@ function getMonthReportFlex(targetMonth) {
 
         totalRevenue += dailyTotal;
         totalExpenses += dailyExp;
-        totalDiffLunch += dailyDiffL;
         totalDiffAll += dailyDiffA;
         daysCount++;
         
@@ -853,15 +869,6 @@ function getMonthReportFlex(targetMonth) {
               "type": "box",
               "layout": "horizontal",
               "margin": "lg",
-              "contents": [
-                { "type": "text", "text": "📊 午班差異", "size": "sm", "color": "#555555" },
-                { "type": "text", "text": "$" + totalDiffLunch.toLocaleString(), "size": "md", "color": "#111111", "align": "end" }
-              ]
-            },
-            {
-              "type": "box",
-              "layout": "horizontal",
-              "margin": "md",
               "contents": [
                 { "type": "text", "text": "📊 全日差異", "size": "sm", "color": "#555555" },
                 { "type": "text", "text": "$" + totalDiffAll.toLocaleString(), "size": "md", "color": "#111111", "align": "end" }
