@@ -72,7 +72,7 @@
             margin-bottom: 24px;
         }
 
-        .input-group label {
+        .input-group > label {
             display: flex;
             justify-content: space-between;
             font-weight: 600;
@@ -145,6 +145,90 @@
 
         input[type="range"]::-webkit-slider-thumb:active {
             transform: scale(1.15);
+        }
+
+        /* 展開細項樣式 */
+        details {
+            margin-top: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        details summary {
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary);
+            cursor: pointer;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details summary::after {
+            content: '▼';
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+
+        details[open] summary::after {
+            transform: rotate(180deg);
+        }
+
+        .details-content {
+            padding: 0 16px 16px;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 4px;
+            padding-top: 12px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-row label {
+            font-size: 14px;
+            color: #64748b;
+            flex: 1;
+        }
+
+        .detail-row .input-wrapper {
+            position: relative;
+            width: 140px;
+        }
+
+        .detail-row .input-wrapper span {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .detail-row input[type="number"] {
+            width: 100%;
+            padding: 8px 8px 8px 24px;
+            font-size: 15px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #fff;
         }
 
         .results-card {
@@ -244,6 +328,7 @@
         <label for="revenue">本月總營收 (元)</label>
         <div class="revenue-input-wrapper">
             <span>$</span>
+            <!-- 預設營收設為細項加總比例的基準 1197325 -->
             <input type="number" id="revenue" value="1197325" inputmode="numeric" placeholder="請輸入總營收">
         </div>
     </div>
@@ -252,18 +337,66 @@
     <div class="input-group">
         <label>
             食材成本 %
-            <span class="value-display" id="costRatioDisplay">36.61%</span>
+            <span class="value-display" id="costRatioDisplay">39.75%</span>
         </label>
-        <input type="range" id="costRatio" min="0" max="100" step="0.01" value="36.61">
+        <input type="range" id="costRatio" min="0" max="100" step="0.01" value="39.75">
+        
+        <details>
+            <summary>📝 展開觀看 / 編輯食材細項金額</summary>
+            <div class="details-content" id="costDetails">
+                <div class="detail-row">
+                    <label>菜錢</label>
+                    <div class="input-wrapper"><span>$</span><input type="number" data-type="cost" value="127482"></div>
+                </div>
+                <div class="detail-row">
+                    <label>肉錢</label>
+                    <div class="input-wrapper"><span>$</span><input type="number" data-type="cost" value="238560"></div>
+                </div>
+                <div class="detail-row">
+                    <label>雞油醬</label>
+                    <div class="input-wrapper"><span>$</span><input type="number" data-type="cost" value="9900"></div>
+                </div>
+                <div class="detail-row">
+                    <label>蛋米包材</label>
+                    <div class="input-wrapper"><span>$</span><input type="number" data-type="cost" value="100000"></div>
+                </div>
+            </div>
+        </details>
     </div>
 
     <!-- 營運費用 % -->
     <div class="input-group">
         <label>
-            營運費用 %
-            <span class="value-display" id="expenseRatioDisplay">40.00%</span>
+            營運費用 (固定) %
+            <span class="value-display" id="expenseRatioDisplay">23.19%</span>
         </label>
-        <input type="range" id="expenseRatio" min="0" max="100" step="0.01" value="40.00">
+        <input type="range" id="expenseRatio" min="0" max="100" step="0.01" value="23.19">
+        
+        <details>
+            <summary>📝 展開觀看 / 編輯費用細項金額</summary>
+            <div class="details-content" id="expenseDetails">
+                <div class="detail-row">
+                    <label>房租</label>
+                    <div class="input-wrapper"><span>$</span><input type="number" data-type="expense" value="7500"></div>
+                </div>
+                <div class="detail-row">
+                    <label>薪資</label>
+                    <div class="input-wrapper"><span>$</span><input type="number" data-type="expense" value="235600"></div>
+                </div>
+                <div class="detail-row">
+                    <label>勞保</label>
+                    <div class="input-wrapper"><span>$</span><input type="number" data-type="expense" value="4506"></div>
+                </div>
+                <div class="detail-row">
+                    <label>水電</label>
+                    <div class="input-wrapper"><span>$</span><input type="number" data-type="expense" value="20000"></div>
+                </div>
+                <div class="detail-row">
+                    <label>雜支</label>
+                    <div class="input-wrapper"><span>$</span><input type="number" data-type="expense" value="10000"></div>
+                </div>
+            </div>
+        </details>
     </div>
 
     <!-- 加盟抽成 % -->
@@ -308,10 +441,17 @@
 
 <script>
     const revenueInput = document.getElementById('revenue');
+    
+    // Sliders
     const costSlider = document.getElementById('costRatio');
     const expenseSlider = document.getElementById('expenseRatio');
     const royaltySlider = document.getElementById('royaltyRatio');
     
+    // Detail Inputs
+    const costInputs = document.querySelectorAll('input[data-type="cost"]');
+    const expenseInputs = document.querySelectorAll('input[data-type="expense"]');
+    
+    // Displays
     const costDisplay = document.getElementById('costRatioDisplay');
     const expenseDisplay = document.getElementById('expenseRatioDisplay');
     const royaltyDisplay = document.getElementById('royaltyRatioDisplay');
@@ -323,31 +463,97 @@
     const resProfit = document.getElementById('resProfit');
     const resMargin = document.getElementById('resMargin');
 
+    // 狀態鎖定，防止連動無窮迴圈
+    let isUpdatingFromDetails = false;
+    let isUpdatingFromSlider = false;
+
     function formatMoney(num) {
         return '$' + Math.round(num).toLocaleString('en-US');
     }
 
-    function calculate() {
+    function getSum(inputs) {
+        let sum = 0;
+        inputs.forEach(input => {
+            sum += parseFloat(input.value) || 0;
+        });
+        return sum;
+    }
+
+    function scaleDetails(inputs, newTotalAmount) {
+        const currentSum = getSum(inputs);
+        if (currentSum === 0) {
+            // 如果目前總和是 0，就平均分配給每個項目
+            const avg = newTotalAmount / inputs.length;
+            inputs.forEach(input => input.value = Math.round(avg));
+            return;
+        }
+        
+        inputs.forEach(input => {
+            const currentVal = parseFloat(input.value) || 0;
+            const ratio = currentVal / currentSum;
+            input.value = Math.round(newTotalAmount * ratio);
+        });
+    }
+
+    // 當修改總營收或拉桿時
+    function calculateFromSliders() {
+        if (isUpdatingFromDetails) return;
+        isUpdatingFromSlider = true;
+
         const revenue = parseFloat(revenueInput.value) || 0;
         const costRatio = parseFloat(costSlider.value);
         const expenseRatio = parseFloat(expenseSlider.value);
         const royaltyRatio = parseFloat(royaltySlider.value);
 
-        // Update displays
-        costDisplay.textContent = costRatio.toFixed(2) + '%';
-        expenseDisplay.textContent = expenseRatio.toFixed(2) + '%';
-        royaltyDisplay.textContent = royaltyRatio.toFixed(2) + '%';
-
-        // Calculation logic (based on reference function)
+        // 依據拉桿 % 計算總金額
         const royaltyAmount = revenue * (royaltyRatio / 100);
         const costAmount = revenue * (costRatio / 100);
         const expenseAmount = revenue * (expenseRatio / 100);
+
+        // 將金額按比例分配回細項輸入框
+        scaleDetails(costInputs, costAmount);
+        scaleDetails(expenseInputs, expenseAmount);
+
+        updateResults(revenue, costAmount, expenseAmount, royaltyAmount, costRatio, expenseRatio, royaltyRatio);
+        
+        isUpdatingFromSlider = false;
+    }
+
+    // 當修改細項輸入框時
+    function calculateFromDetails() {
+        if (isUpdatingFromSlider) return;
+        isUpdatingFromDetails = true;
+
+        const revenue = parseFloat(revenueInput.value) || 0;
+        const royaltyRatio = parseFloat(royaltySlider.value);
+        const royaltyAmount = revenue * (royaltyRatio / 100);
+
+        // 加總細項
+        const costAmount = getSum(costInputs);
+        const expenseAmount = getSum(expenseInputs);
+
+        // 反推 % 數並更新拉桿
+        let newCostRatio = revenue > 0 ? (costAmount / revenue) * 100 : 0;
+        let newExpenseRatio = revenue > 0 ? (expenseAmount / revenue) * 100 : 0;
+        
+        costSlider.value = newCostRatio.toFixed(2);
+        expenseSlider.value = newExpenseRatio.toFixed(2);
+
+        updateResults(revenue, costAmount, expenseAmount, royaltyAmount, newCostRatio, newExpenseRatio, royaltyRatio);
+
+        isUpdatingFromDetails = false;
+    }
+
+    // 更新畫面顯示
+    function updateResults(revenue, costAmount, expenseAmount, royaltyAmount, costRatio, expenseRatio, royaltyRatio) {
+        costDisplay.textContent = costRatio.toFixed(2) + '%';
+        expenseDisplay.textContent = expenseRatio.toFixed(2) + '%';
+        royaltyDisplay.textContent = royaltyRatio.toFixed(2) + '%';
 
         const totalExpense = costAmount + expenseAmount + royaltyAmount;
         const netProfit = revenue - totalExpense;
         const netMargin = revenue > 0 ? ((netProfit / revenue) * 100) : 0;
 
-        // Render results
         resRevenue.textContent = formatMoney(revenue);
         resCost.textContent = '-' + formatMoney(costAmount);
         resExpense.textContent = '-' + formatMoney(expenseAmount);
@@ -357,10 +563,19 @@
         resMargin.textContent = '淨利率：' + netMargin.toFixed(2) + '%';
     }
 
-    revenueInput.addEventListener('input', calculate);
-    costSlider.addEventListener('input', calculate);
-    expenseSlider.addEventListener('input', calculate);
-    royaltySlider.addEventListener('input', calculate);
+    // 綁定事件監聽
+    revenueInput.addEventListener('input', () => {
+        // 營收改變時，為了保持細項的絕對金額不變，我們選擇從「細項」反推「%數」
+        // 這樣比較符合使用者期待：我改了營收，但我剛剛輸入的房租不會自己亂跳
+        calculateFromDetails();
+    });
+    
+    costSlider.addEventListener('input', calculateFromSliders);
+    expenseSlider.addEventListener('input', calculateFromSliders);
+    royaltySlider.addEventListener('input', calculateFromSliders);
+
+    costInputs.forEach(input => input.addEventListener('input', calculateFromDetails));
+    expenseInputs.forEach(input => input.addEventListener('input', calculateFromDetails));
 
     function closeWindow() {
         if (typeof liff !== 'undefined' && liff.isInClient()) {
@@ -370,7 +585,8 @@
         }
     }
 
-    calculate();
+    // 初始載入時，以細項的預設值為基準來計算一次
+    calculateFromDetails();
 </script>
 
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
