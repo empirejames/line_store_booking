@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -337,7 +337,10 @@
     <div class="input-group">
         <label>
             食材成本 %
-            <span class="value-display" id="costRatioDisplay">39.75%</span>
+            <span class="value-display">
+                <span id="costAmountDisplay" style="color: #64748b; font-size: 13px; margin-right: 8px;">$475,942</span>
+                <span id="costRatioDisplay">39.75%</span>
+            </span>
         </label>
         <input type="range" id="costRatio" min="0" max="100" step="0.01" value="39.75">
         
@@ -368,7 +371,10 @@
     <div class="input-group">
         <label>
             營運費用 (固定) %
-            <span class="value-display" id="expenseRatioDisplay">23.19%</span>
+            <span class="value-display">
+                <span id="expenseAmountDisplay" style="color: #64748b; font-size: 13px; margin-right: 8px;">$277,606</span>
+                <span id="expenseRatioDisplay">23.19%</span>
+            </span>
         </label>
         <input type="range" id="expenseRatio" min="0" max="100" step="0.01" value="23.19">
         
@@ -403,7 +409,10 @@
     <div class="input-group">
         <label>
             加盟抽成 %
-            <span class="value-display" id="royaltyRatioDisplay">3.00%</span>
+            <span class="value-display">
+                <span id="royaltyAmountDisplay" style="color: #64748b; font-size: 13px; margin-right: 8px;">$35,920</span>
+                <span id="royaltyRatioDisplay">3.00%</span>
+            </span>
         </label>
         <input type="range" id="royaltyRatio" min="0" max="15" step="0.01" value="3.00">
     </div>
@@ -455,6 +464,10 @@
     const costDisplay = document.getElementById('costRatioDisplay');
     const expenseDisplay = document.getElementById('expenseRatioDisplay');
     const royaltyDisplay = document.getElementById('royaltyRatioDisplay');
+    
+    const costAmountDisplay = document.getElementById('costAmountDisplay');
+    const expenseAmountDisplay = document.getElementById('expenseAmountDisplay');
+    const royaltyAmountDisplay = document.getElementById('royaltyAmountDisplay');
     
     const resRevenue = document.getElementById('resRevenue');
     const resCost = document.getElementById('resCost');
@@ -549,6 +562,10 @@
         costDisplay.textContent = costRatio.toFixed(2) + '%';
         expenseDisplay.textContent = expenseRatio.toFixed(2) + '%';
         royaltyDisplay.textContent = royaltyRatio.toFixed(2) + '%';
+
+        costAmountDisplay.textContent = formatMoney(costAmount);
+        expenseAmountDisplay.textContent = formatMoney(expenseAmount);
+        royaltyAmountDisplay.textContent = formatMoney(royaltyAmount);
 
         const totalExpense = costAmount + expenseAmount + royaltyAmount;
         const netProfit = revenue - totalExpense;
