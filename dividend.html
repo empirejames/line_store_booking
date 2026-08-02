@@ -434,7 +434,19 @@
                 <span id="royaltyRatioDisplay">3.00%</span>
             </span>
         </label>
-        <input type="range" id="royaltyRatio" min="0" max="15" step="0.01" value="3.00">
+        <!-- 抽成比例固定不顯示拉桿 -->
+    </div>
+
+    <!-- 營業稅 (折抵) % -->
+    <div class="input-group">
+        <label>
+            營業稅 (折抵) %
+            <span class="value-display">
+                <span id="taxAmountDisplay" style="color: #64748b; font-size: 13px; margin-right: 8px;">$59,866</span>
+                <span id="taxRatioDisplay">5.00%</span>
+            </span>
+        </label>
+        <input type="range" id="taxRatio" min="0" max="15" step="0.01" value="5.00">
     </div>
 
     <!-- 計算結果 -->
@@ -454,6 +466,10 @@
         <div class="result-row deduction royalty">
             <span>- 加盟抽成</span>
             <span class="amount" id="resRoyalty">-</span>
+        </div>
+        <div class="result-row deduction royalty">
+            <span>- 營業稅 (折抵)</span>
+            <span class="amount" id="resTax">-</span>
         </div>
 
         <div class="final-result">
@@ -478,7 +494,7 @@
     // Sliders
     const costSlider = document.getElementById('costRatio');
     const expenseSlider = document.getElementById('expenseRatio');
-    const royaltySlider = document.getElementById('royaltyRatio');
+    const taxSlider = document.getElementById('taxRatio');
     
     // Detail Inputs
     const costInputs = document.querySelectorAll('input[data-type="cost"]');
@@ -488,17 +504,23 @@
     const costDisplay = document.getElementById('costRatioDisplay');
     const expenseDisplay = document.getElementById('expenseRatioDisplay');
     const royaltyDisplay = document.getElementById('royaltyRatioDisplay');
+    const taxDisplay = document.getElementById('taxRatioDisplay');
     
     const costAmountDisplay = document.getElementById('costAmountDisplay');
     const expenseAmountDisplay = document.getElementById('expenseAmountDisplay');
     const royaltyAmountDisplay = document.getElementById('royaltyAmountDisplay');
+    const taxAmountDisplay = document.getElementById('taxAmountDisplay');
     
     const resRevenue = document.getElementById('resRevenue');
     const resCost = document.getElementById('resCost');
     const resExpense = document.getElementById('resExpense');
     const resRoyalty = document.getElementById('resRoyalty');
+    const resTax = document.getElementById('resTax');
     const resProfit = document.getElementById('resProfit');
     const resMargin = document.getElementById('resMargin');
+
+    // 固定加盟抽成比例
+    const ROYALTY_RATIO = 3.00;
 
     // 狀態鎖定，防止連動無窮迴圈
     let isUpdatingFromDetails = false;
@@ -540,10 +562,11 @@
         const revenue = parseFloat(revenueInput.value) || 0;
         const costRatio = parseFloat(costSlider.value);
         const expenseRatio = parseFloat(expenseSlider.value);
-        const royaltyRatio = parseFloat(royaltySlider.value);
+        const taxRatio = parseFloat(taxSlider.value);
 
         // 依據拉桿 % 計算總金額
-        const royaltyAmount = revenue * (royaltyRatio / 100);
+        const royaltyAmount = revenue * (ROYALTY_RATIO / 100);
+        const taxAmount = revenue * (taxRatio / 100);
         const costAmount = revenue * (costRatio / 100);
         const expenseAmount = revenue * (expenseRatio / 100);
 
@@ -551,7 +574,7 @@
         scaleDetails(costInputs, costAmount);
         scaleDetails(expenseInputs, expenseAmount);
 
-        updateResults(revenue, costAmount, expenseAmount, royaltyAmount, costRatio, expenseRatio, royaltyRatio);
+        updateResults(revenue, costAmount, expenseAmount, royaltyAmount, taxAmount, costRatio, expenseRatio, taxRatio);
         
         isUpdatingFromSlider = false;
     }
@@ -562,8 +585,10 @@
         isUpdatingFromDetails = true;
 
         const revenue = parseFloat(revenueInput.value) || 0;
-        const royaltyRatio = parseFloat(royaltySlider.value);
-        const royaltyAmount = revenue * (royaltyRatio / 100);
+        const taxRatio = parseFloat(taxSlider.value);
+        
+        const royaltyAmount = revenue * (ROYALTY_RATIO / 100);
+        const taxAmount = revenue * (taxRatio / 100);
 
         // 加總細項
         const costAmount = getSum(costInputs);
@@ -576,22 +601,24 @@
         costSlider.value = newCostRatio.toFixed(2);
         expenseSlider.value = newExpenseRatio.toFixed(2);
 
-        updateResults(revenue, costAmount, expenseAmount, royaltyAmount, newCostRatio, newExpenseRatio, royaltyRatio);
+        updateResults(revenue, costAmount, expenseAmount, royaltyAmount, taxAmount, newCostRatio, newExpenseRatio, taxRatio);
 
         isUpdatingFromDetails = false;
     }
 
     // 更新畫面顯示
-    function updateResults(revenue, costAmount, expenseAmount, royaltyAmount, costRatio, expenseRatio, royaltyRatio) {
+    function updateResults(revenue, costAmount, expenseAmount, royaltyAmount, taxAmount, costRatio, expenseRatio, taxRatio) {
         costDisplay.textContent = costRatio.toFixed(2) + '%';
         expenseDisplay.textContent = expenseRatio.toFixed(2) + '%';
-        royaltyDisplay.textContent = royaltyRatio.toFixed(2) + '%';
+        royaltyDisplay.textContent = ROYALTY_RATIO.toFixed(2) + '%';
+        taxDisplay.textContent = taxRatio.toFixed(2) + '%';
 
         costAmountDisplay.textContent = formatMoney(costAmount);
         expenseAmountDisplay.textContent = formatMoney(expenseAmount);
         royaltyAmountDisplay.textContent = formatMoney(royaltyAmount);
+        taxAmountDisplay.textContent = formatMoney(taxAmount);
 
-        const totalExpense = costAmount + expenseAmount + royaltyAmount;
+        const totalExpense = costAmount + expenseAmount + royaltyAmount + taxAmount;
         const netProfit = revenue - totalExpense;
         const netMargin = revenue > 0 ? ((netProfit / revenue) * 100) : 0;
 
@@ -599,6 +626,7 @@
         resCost.textContent = '-' + formatMoney(costAmount);
         resExpense.textContent = '-' + formatMoney(expenseAmount);
         resRoyalty.textContent = '-' + formatMoney(royaltyAmount);
+        resTax.textContent = '-' + formatMoney(taxAmount);
         
         resProfit.textContent = formatMoney(netProfit);
         resMargin.textContent = '淨利率：' + netMargin.toFixed(2) + '%';
@@ -606,14 +634,12 @@
 
     // 綁定事件監聽
     revenueInput.addEventListener('input', () => {
-        // 營收改變時，為了保持細項的絕對金額不變，我們選擇從「細項」反推「%數」
-        // 這樣比較符合使用者期待：我改了營收，但我剛剛輸入的房租不會自己亂跳
         calculateFromDetails();
     });
     
     costSlider.addEventListener('input', calculateFromSliders);
     expenseSlider.addEventListener('input', calculateFromSliders);
-    royaltySlider.addEventListener('input', calculateFromSliders);
+    taxSlider.addEventListener('input', calculateFromSliders);
 
     costInputs.forEach(input => input.addEventListener('input', calculateFromDetails));
     expenseInputs.forEach(input => input.addEventListener('input', calculateFromDetails));
