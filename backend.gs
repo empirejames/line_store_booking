@@ -679,7 +679,6 @@ function getMonthReport() {
 
         totalRevenue += dailyTotal;
         totalExpenses += dailyExp;
-        totalDiffLunch += dailyDiffL;
         totalDiffAll += dailyDiffA;
         daysCount++;
         
