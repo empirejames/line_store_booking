@@ -574,8 +574,8 @@
             let isLatest = (idx === recentWeeks.length - 1);
             let color = weekColors[idx] || weekColors[0];
 
-            // 拔除括號內的日期作為週別名稱 (例如取得 W1)
-            let legendName = week.label.split(' ')[0];
+            // 強制命名為 W1, W2, W3, W4
+            let legendName = 'W' + (idx + 1);
 
             let labelText = isLatest ? legendName + ' (本週)' : legendName;
 
