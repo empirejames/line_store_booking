@@ -178,7 +178,7 @@
                             let startLabel = currentWeekLabels[0].split('(')[0];
                             let endLabel = currentWeekLabels[currentWeekLabels.length - 1].split('(')[0];
                             weeksData.push({
-                                label: `第 ${weekNum} 週 (${startLabel} ~ ${endLabel})`,
+                                label: `W${weekNum} (${startLabel} ~ ${endLabel})`,
                                 labels: currentWeekLabels,
                                 data: currentWeekData
                             });
@@ -199,7 +199,7 @@
                         let startLabel = currentWeekLabels[0].split('(')[0];
                         let endLabel = currentWeekLabels[currentWeekLabels.length - 1].split('(')[0];
                         weeksData.push({
-                            label: `第 ${weekNum} 週 (${startLabel} ~ ${endLabel})`,
+                            label: `W${weekNum} (${startLabel} ~ ${endLabel})`,
                             labels: currentWeekLabels,
                             data: currentWeekData
                         });
@@ -572,8 +572,8 @@
             let isLatest = (idx === recentWeeks.length - 1);
             let color = weekColors[idx] || weekColors[0];
 
-            // 從 label 取得日期範圍作為圖例名稱
-            let legendName = week.label.replace(/第 \d+ 週 /, '');
+            // 拔除括號內的日期作為週別名稱 (例如取得 W1)
+            let legendName = week.label.split(' ')[0];
 
             datasets.push({
                 label: isLatest ? '★ 本週 ' + legendName : legendName,
