@@ -531,6 +531,8 @@
     // 🔀 四週對比模式：重疊 4 條不同顏色的曲線
     // =============================================
     function renderCompareChart() {
+        const chartInner = document.getElementById('chartInner');
+        chartInner.style.width = '100%';
         const ctx = document.getElementById('revenueChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
 
@@ -575,19 +577,21 @@
             // 拔除括號內的日期作為週別名稱 (例如取得 W1)
             let legendName = week.label.split(' ')[0];
 
+            let labelText = isLatest ? legendName + ' (本週)' : legendName;
+
             datasets.push({
-                label: isLatest ? '★ 本週 ' + legendName : legendName,
+                label: labelText,
                 data: aligned,
                 borderColor: color.border,
-                backgroundColor: isLatest ? color.bg : 'transparent',
-                borderWidth: isLatest ? 3.5 : 2,
-                borderDash: isLatest ? [] : [6, 3],
+                backgroundColor: 'transparent',
+                borderWidth: 2.5,
+                borderDash: [],
                 pointBackgroundColor: '#fff',
                 pointBorderColor: color.point,
-                pointBorderWidth: isLatest ? 3 : 1.5,
-                pointRadius: isLatest ? 5 : 3,
+                pointBorderWidth: 2,
+                pointRadius: 4,
                 pointHoverRadius: 7,
-                fill: isLatest,
+                fill: false,
                 tension: 0.3,
                 spanGaps: true
             });
