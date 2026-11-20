@@ -1,4 +1,5 @@
 name: LINE Daily Reminder
+# Last maintenance keepalive: 2026-11-20
 
 on:
   schedule:
